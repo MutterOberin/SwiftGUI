@@ -1,0 +1,30 @@
+{
+	"build_systems":
+	[
+		{
+			"cmd":
+			[
+				"./scripts/make.sh"
+			],
+			"file_regex": "^(..[^:]*):(.*)$",
+			"name": "swiftgui-project",
+			"working_dir": "${project_path}/.."
+		},
+		{
+			"cmd":
+			[
+				"scripts\\make.bat"
+			],
+			"file_regex": "^(..[^:]*):(.*)$",
+			"name": "swift3d-project-windows",
+			"working_dir": "${project_path}/.."
+		}
+	],
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": ".."
+		}
+	]
+}
