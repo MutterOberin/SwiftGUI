@@ -1,7 +1,9 @@
 #!/bin/sh
 
 # get directory of script and cd to it
-DIR="$( cd "$( dirname "$0" )" && pwd )"
-cd $DIR
+BINARY_DIR="$( cd "$( dirname "$0" )" && pwd )"
+cd $BINARY_DIR
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DIR ./simple
+LIB_DIR=$BINARY_DIR/../lib
+
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LIB_DIR:$BINARY_DIR ./simple
