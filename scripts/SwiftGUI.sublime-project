@@ -26,5 +26,13 @@
 			"follow_symlinks": true,
 			"path": ".."
 		}
-	]
+	],
+	"settings":
+	{
+		"cc_include_options":
+	    [
+	        "-I${project_path}/../src",
+	        "-isystem", "${project_path}/../../../cef",
+	    ]
+	}
 }
