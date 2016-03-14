@@ -4,6 +4,12 @@
 BINARY_DIR="$( cd "$( dirname "$0" )" && pwd )"
 cd $BINARY_DIR
 
-LIB_DIR=$BINARY_DIR/../lib
+get_abs_filename() {
+  echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+}
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LIB_DIR:$BINARY_DIR ./simple
+SWIFTGUI_DIR=$(get_abs_filename "../lib")
+CEF_DIR=$(get_abs_filename "../../../../cef")
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SWIFTGUI_DIR:$CEF_DIR/Release
+./simple --resources-dir-path="$CEF_DIR/Resources" --locales-dir-path="$CEF_DIR/Resources/locales"
