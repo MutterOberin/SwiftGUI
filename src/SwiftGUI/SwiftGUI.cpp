@@ -16,8 +16,8 @@
 
 namespace swift {
 
-void ShowGui() {
-  detail::Test();
+void WriteTga(const std::string& filename, char* data, unsigned width, unsigned height) {
+  detail::WriteTga(filename, data, width, height);
 }
 
 }

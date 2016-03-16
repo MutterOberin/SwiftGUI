@@ -9,8 +9,11 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+// includes  -------------------------------------------------------------------
+#include <string>
+
 namespace swift {
 
-void ShowGui();
+void WriteTga(const std::string& filename, char* data, unsigned width, unsigned height);
 
 }

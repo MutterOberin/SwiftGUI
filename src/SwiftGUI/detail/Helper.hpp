@@ -10,13 +10,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // includes  -------------------------------------------------------------------
+#include <string>
 
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swift {
 namespace detail {
 
-  void Test();
+bool WriteTga(const std::string& filename, char* data, unsigned width, unsigned height);
 
 }
 }
