@@ -15,10 +15,10 @@ file(GLOB FILES_PUBLIC_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CEF_INCLUDE_DIRS}
+    ${CEF_DIR}
 )
 
-link_directories(${CEF_LIBRARY_DIRS})
+link_directories(${CEF_DIR}/lib)
 
 add_library(${TARGET_NAME} SHARED ${FILES_SRC})
 

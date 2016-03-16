@@ -1,10 +1,10 @@
 get_filename_component(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 
 include_directories(
-    ${CEF_INCLUDE_DIRS}
+    ${CEF_DIR}
     ${CMAKE_SOURCE_DIR}/src
 )
-link_directories(${CEF_LIBRARY_DIRS})
+link_directories(${CEF_DIR}/lib)
 
 add_executable(${TARGET_NAME} main.cpp)
 add_dependencies(${TARGET_NAME} SwiftGUI)

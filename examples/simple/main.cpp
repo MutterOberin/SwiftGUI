@@ -61,6 +61,7 @@ public:
   }
 
   void OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void *buffer, int width, int height) {
+    std::cout << "draw" << std::endl;
     write_tga("test.tga", (char*)buffer, width_, height_);
   }
 
@@ -99,14 +100,14 @@ int main(int argc, char *argv[])
 
   swift::ShowGui();
 
-  int result = CefExecuteProcess(args, nullptr, nullptr);
+  int result = CefExecuteProcess(args, 0, 0);
   if (result >= 0) {
     return result;
   }
 
   CefSettings settings;
 
-  if (!CefInitialize(args, settings, nullptr, nullptr)) {
+  if (!CefInitialize(args, settings, 0, 0)) {
     return -1;
   }
 
@@ -124,7 +125,7 @@ int main(int argc, char *argv[])
   browserClient = new BrowserClient(renderHandler);
 
   browser = CefBrowserHost::CreateBrowserSync(window_info, browserClient.get(),
-              "http://stackoverflow.com/questions/16538945/writing-uncompressed-tga-to-file-in-c",
+              "https://www.youtube.com/watch?v=ghV21DlDOug",
               browserSettings, nullptr);
 
   while (true) {
