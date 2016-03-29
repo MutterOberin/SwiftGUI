@@ -24,6 +24,7 @@
 	[
 		{
 			"follow_symlinks": true,
+			"folder_exclude_patterns": ["build", "install"],
 			"path": ".."
 		}
 	],

@@ -11,104 +11,48 @@
 
 // includes  -------------------------------------------------------------------
 #include <iostream>
+#include <fstream>
 
 #include <SwiftGUI/SwiftGUI.hpp>
-
-#include <include/cef_app.h>
-#include <include/cef_client.h>
-#include <include/cef_render_handler.h>
+#include <SwiftGUI/WebView.hpp>
 
 // -----------------------------------------------------------------------------
-class RenderHandler : public CefRenderHandler
-{
-public:
-  RenderHandler(int width=960, int height=640)
-  : width_(width)
-  , height_(height)
-  {}
+bool WriteTga(const std::string& filename, const char* data, unsigned width, unsigned height) {
+  std::ofstream tgafile( filename.c_str(), std::ios::binary );
+  if (!tgafile) return false;
 
-  // CefRenderHandler interface
-  bool GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect) {
-    rect = CefRect(0, 0, width_, height_);
-    return true;
+  char header[18]={0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  header[12] = width         & 0xFF;
+  header[13] = ( width >> 8) & 0xFF;
+  header[14] = (height)      & 0xFF;
+  header[15] = (height >> 8) & 0xFF;
+  header[16] = 32;
+  tgafile.write((const char*)header, 18 );
+
+  for (int y = height -1; y >= 0; y--) {
+    tgafile.write(&data[width*4*y], width * 4);
   }
 
-  void OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void *buffer, int width, int height) {
-    std::cout << "draw" << std::endl;
-    swift::WriteTga("test.tga", (char*)buffer, width_, height_);
-  }
-
-  // CefBase interface
- public:
-  IMPLEMENT_REFCOUNTING(RenderHandler);
-
-  int width_;
-  int height_;
-};
-
+  tgafile.close();
+  return true;
+}
 
 // -----------------------------------------------------------------------------
-// for manual render handler
-class BrowserClient : public CefClient
-{
- public:
-  BrowserClient(RenderHandler *renderHandler)
-  : m_renderHandler(renderHandler)
-  {}
+int main(int argc, char *argv[]) {
 
-  virtual CefRefPtr<CefRenderHandler> GetRenderHandler() {
-    return m_renderHandler;
-  }
+  swift::Gui gui(argc, argv);
 
-  CefRefPtr<CefRenderHandler> m_renderHandler;
+  swift::WebView webView("https://www.youtube.com/watch?v=ghV21DlDOug");
 
-  IMPLEMENT_REFCOUNTING(BrowserClient);
-};
+  webView.SetDrawCallback([](const std::vector<swift::Rect>& dirtyRects, const char* data){
+    WriteTga("test.tga", data, 960, 640);
+  });
 
-
-// -----------------------------------------------------------------------------
-int main(int argc, char *argv[])
-{
-  CefMainArgs args(argc, argv);
-
-  int result = CefExecuteProcess(args, 0, 0);
-  if (result >= 0) {
-    return result;
-  }
-
-  CefSettings settings;
-
-  if (!CefInitialize(args, settings, 0, 0)) {
-    return -1;
-  }
-
-  RenderHandler* renderHandler = new RenderHandler();
-
-  // create browser-window
-  CefRefPtr<CefBrowser> browser;
-  CefRefPtr<BrowserClient> browserClient;
-  CefWindowInfo window_info;
-  CefBrowserSettings browserSettings;
-
-  std::size_t windowHandle = 0;
-  window_info.SetAsWindowless(windowHandle, true);
-
-  browserClient = new BrowserClient(renderHandler);
-
-  browser = CefBrowserHost::CreateBrowserSync(window_info, browserClient.get(),
-              "https://www.youtube.com/watch?v=ghV21DlDOug",
-              browserSettings, NULL);
+  webView.ShowDevTools();
 
   while (true) {
-    // browser->GetHost()->SendKeyEvent(...);
-    // browser->GetHost()->SendMouseMoveEvent(...);
-    // browser->GetHost()->SendMouseClickEvent(...);
-    // browser->GetHost()->SendMouseWheelEvent(...);
-    CefDoMessageLoopWork();
+    gui.Update();
   }
-
-  CefShutdown();
-  delete renderHandler;
 
   return 0;
 }

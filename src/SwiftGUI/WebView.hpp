@@ -9,16 +9,33 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-// includes  -------------------------------------------------------------------
-#include <string>
+#ifndef SWIFT_WEBVIEW_HPP
+#define SWIFT_WEBVIEW_HPP
 
-////////////////////////////////////////////////////////////////////////////////
+// includes  -------------------------------------------------------------------
+#include "types.hpp"
 
 namespace swift {
-namespace detail {
 
-bool WriteTga(const std::string& filename, char* data, unsigned width, unsigned height);
+class WebView {
+
+ public:
+
+  WebView(const std::string& url);
+  virtual ~WebView();
+
+  void SetDrawCallback(const DrawCallback& callback);
+
+  void Reload(bool ignoreCache = false);
+
+  void ShowDevTools();
+
+ private:
+  detail::Browser*        browser_;
+  detail::WebViewClient*  client_;
+
+};
 
 }
-}
 
+#endif // SWIFT_WEBVIEW_HPP

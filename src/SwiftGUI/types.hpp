@@ -9,39 +9,30 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef SWIFT_TYPES_HPP
+#define SWIFT_TYPES_HPP
+
 // includes  -------------------------------------------------------------------
-#include "SwiftGUI.hpp"
-
-#include <stdlib.h>
-#include <include/cef_app.h>
-
-#include <iostream>
+#include <vector>
+#include <functional>
 
 namespace swift {
 
-Gui::Gui(int argc, char *argv[]) {
-  CefMainArgs args(argc, argv);
+struct Rect {
+  int x;
+  int y;
+  int width;
+  int height;
+};
 
-  int result = CefExecuteProcess(args, 0, 0);
-  if (result >= 0) {
-    exit(result);
-  }
+typedef std::function<void(const std::vector<Rect>&, const char*)> DrawCallback;
 
-  CefSettings settings;
+namespace detail {
 
-  if (!CefInitialize(args, settings, 0, 0)) {
-    std::cout << "Warning!" << std::endl;;
-  }
-}
-
-Gui::~Gui() {
-  CefShutdown();
-}
-
-void Gui::Update() {
-  CefDoMessageLoopWork();
-}
-
-
+class Browser;
+class WebViewClient;
 
 }
+}
+
+#endif // SWIFT_TYPES_HPP

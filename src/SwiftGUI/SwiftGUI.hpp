@@ -9,11 +9,22 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef SWIFT_GUI_HPP
+#define SWIFT_GUI_HPP
+
 // includes  -------------------------------------------------------------------
-#include <string>
 
 namespace swift {
 
-void WriteTga(const std::string& filename, char* data, unsigned width, unsigned height);
+class Gui {
+
+ public:
+  Gui(int argc, char *argv[]);
+  virtual ~Gui();
+
+  void Update();
+};
 
 }
+
+#endif // SWIFT_GUI_HPP
