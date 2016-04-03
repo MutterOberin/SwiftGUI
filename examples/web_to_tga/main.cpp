@@ -42,13 +42,11 @@ int main(int argc, char *argv[]) {
 
   swift::Gui::Init(argc, argv);
 
-  swift::WebView webView("https://www.youtube.com/watch?v=ghV21DlDOug");
+  swift::WebView webView("https://www.youtube.com/watch?v=ghV21DlDOug", 960, 640);
 
-  webView.SetDrawCallback([](const std::vector<swift::Rect>& dirtyRects, const char* data){
-    WriteTga("test.tga", data, 960, 640);
+  webView.SetDrawCallback([](int width, int height, const std::vector<swift::Rect>& dirtyRects, const char* data){
+    WriteTga("test.tga", data, width, height);
   });
-
-  // webView.ShowDevTools();
 
   while (true) {
     swift::Gui::Update();

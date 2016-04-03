@@ -17,8 +17,8 @@
 
 namespace swift {
 
-WebView::WebView(const std::string& url) {
-  client_ = new detail::WebViewClient();
+WebView::WebView(const std::string& url, int width, int height) {
+  client_ = new detail::WebViewClient(width, height);
   browser_ = new detail::Browser();
 
   CefRefPtr<detail::WebViewClient> browserClient;
@@ -40,6 +40,11 @@ WebView::~WebView() {
 
 void WebView::SetDrawCallback(const DrawCallback& callback) {
   client_->SetDrawCallback(callback);
+}
+
+void WebView::Resize(int width, int height) {
+  client_->Resize(width, height);
+  browser_->Get()->GetHost()->WasResized();
 }
 
 void WebView::Reload(bool ignoreCache) {

@@ -18,19 +18,20 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
-int CurrentWidth = 800;
-int CurrentHeight = 600;
-int WindowHandle = 0;
+const int WIDTH = 800;
+const int HEIGHT = 600;
 
-GLuint VertexShaderId;
-GLuint FragmentShaderId;
-GLuint ProgramId;
-GLuint VaoId;
-GLuint VboId;
-GLuint ColorBufferId;
-GLuint TextureId;
+GLuint v_shader;
+GLuint f_shader;
+GLuint program;
+GLuint vao;
+GLuint vertex_buffer;
+GLuint texcoord_buffer;
+GLuint texture;
 
-const std::string VertexShader = R"(
+swift::WebView* web_view;
+
+const std::string V_SOURCE = R"(
   #version 400
 
   layout(location=0) in vec4 in_Position;
@@ -45,7 +46,7 @@ const std::string VertexShader = R"(
   }
 )";
 
-const std::string FragmentShader = R"(
+const std::string F_SOURCE = R"(
   #version 400
 
   in vec2 TexCoord;
@@ -58,104 +59,89 @@ const std::string FragmentShader = R"(
   }
 )";
 
-void CheckError(std::string const& msg) {
-  GLint ErrorCheckValue = glGetError();
-  if (ErrorCheckValue != GL_NO_ERROR) {
-    std::cerr << msg << ": " << gluErrorString(ErrorCheckValue) << std::endl;
-  }
-}
+void CreateResources() {
 
-
-void CreateVBO() {
-  GLfloat Vertices[] = {
-    -0.8f, -0.9f, 0.0f, 1.0f,
-     0.8f, -0.8f, 0.0f, 1.0f,
-     -0.8f,  0.8f, 0.0f, 1.0f,
-     0.8f,  0.9f, 0.0f, 1.0f
+  // VBO -----------------------------------------------------------------------
+  GLfloat vertices[] = {
+    -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 0.0f, 1.0f,
+    -1.0f,  1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 0.0f, 1.0f
   };
 
-  GLfloat Colors[] = {
-    0.0f, 0.0f,
-    1.0f, 0.0f,
-    0.0f, 1.0f,
-    1.0f, 1.0f
-  };
+  GLfloat texcoords[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
 
-  glGenVertexArrays(1, &VaoId);
-  glBindVertexArray(VaoId);
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
 
-  glGenBuffers(1, &VboId);
-  glBindBuffer(GL_ARRAY_BUFFER, VboId);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+  glGenBuffers(1, &vertex_buffer);
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
   glEnableVertexAttribArray(0);
 
-  glGenBuffers(1, &ColorBufferId);
-  glBindBuffer(GL_ARRAY_BUFFER, ColorBufferId);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(Colors), Colors, GL_STATIC_DRAW);
+  glGenBuffers(1, &texcoord_buffer);
+  glBindBuffer(GL_ARRAY_BUFFER, texcoord_buffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(texcoords), texcoords, GL_STATIC_DRAW);
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
   glEnableVertexAttribArray(1);
 
-  CheckError("Could not create VBO");
+  // Shader --------------------------------------------------------------------
+  v_shader = glCreateShader(GL_VERTEX_SHADER);
+  const char *vSource = V_SOURCE.c_str();
+  glShaderSource(v_shader, 1, &vSource, NULL);
+  glCompileShader(v_shader);
+
+  f_shader = glCreateShader(GL_FRAGMENT_SHADER);
+  const char *fSource = F_SOURCE.c_str();
+  glShaderSource(f_shader, 1, &fSource, NULL);
+  glCompileShader(f_shader);
+
+  program = glCreateProgram();
+  glAttachShader(program, v_shader);
+  glAttachShader(program, f_shader);
+  glLinkProgram(program);
+  glUseProgram(program);
+
+  // Texture --------------------------------------------------------------------
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 }
 
-void DestroyVBO() {
+void DestroyResources() {
+
+  // VBO -----------------------------------------------------------------------
   glDisableVertexAttribArray(1);
   glDisableVertexAttribArray(0);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glDeleteBuffers(1, &ColorBufferId);
-  glDeleteBuffers(1, &VboId);
+  glDeleteBuffers(1, &texcoord_buffer);
+  glDeleteBuffers(1, &vertex_buffer);
 
   glBindVertexArray(0);
-  glDeleteVertexArrays(1, &VaoId);
-}
+  glDeleteVertexArrays(1, &vao);
 
-void CreateShaders() {
-  VertexShaderId = glCreateShader(GL_VERTEX_SHADER);
-  const char *vSource = VertexShader.c_str();
-  glShaderSource(VertexShaderId, 1, &vSource, NULL);
-  glCompileShader(VertexShaderId);
-
-  FragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
-  const char *fSource = FragmentShader.c_str();
-  glShaderSource(FragmentShaderId, 1, &fSource, NULL);
-  glCompileShader(FragmentShaderId);
-
-  ProgramId = glCreateProgram();
-  glAttachShader(ProgramId, VertexShaderId);
-  glAttachShader(ProgramId, FragmentShaderId);
-  glLinkProgram(ProgramId);
-  glUseProgram(ProgramId);
-
-  CheckError("Could not create Shader");
-}
-
-void CreateTexture() {
-  glGenTextures(1, &TextureId);
-  glBindTexture(GL_TEXTURE_2D, TextureId);
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
-  CheckError("Could not create Texture");
-}
-
-void DestroyTexture() {
-  glBindTexture(GL_TEXTURE_2D, 0);
-  glDeleteTextures(1, &TextureId);
-}
-
-void DestroyShaders() {
+  // Shader --------------------------------------------------------------------
   glUseProgram(0);
-  glDetachShader(ProgramId, VertexShaderId);
-  glDetachShader(ProgramId, FragmentShaderId);
-  glDeleteShader(FragmentShaderId);
-  glDeleteShader(VertexShaderId);
-  glDeleteProgram(ProgramId);
+  glDetachShader(program, v_shader);
+  glDetachShader(program, f_shader);
+  glDeleteShader(f_shader);
+  glDeleteShader(v_shader);
+  glDeleteProgram(program);
+
+  // Texture --------------------------------------------------------------------
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glDeleteTextures(1, &texture);
 }
 
 int main(int argc, char* argv[]) {
   swift::Gui::Init(argc, argv);
+
+  web_view = new swift::WebView("https://www.youtube.com/watch?v=ghV21DlDOug", WIDTH, HEIGHT);
+
+  web_view->SetDrawCallback([](int width, int height, const std::vector<swift::Rect>& dirtyRects, const char* data) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+  });
 
   glutInit(&argc, argv);
   glutInitContextVersion(4, 0);
@@ -167,19 +153,17 @@ int main(int argc, char* argv[]) {
     GLUT_ACTION_GLUTMAINLOOP_RETURNS
   );
 
-  glutInitWindowSize(CurrentWidth, CurrentHeight);
+  glutInitWindowSize(WIDTH, HEIGHT);
   glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 
   glutCreateWindow("SwiftGui Example");
 
   glewExperimental = GL_TRUE;
   glewInit();
-  CheckError("Glew init issue");
 
-  glutReshapeFunc([](int Width, int Height){
-    CurrentWidth = Width;
-    CurrentHeight = Height;
-    glViewport(0, 0, CurrentWidth, CurrentHeight);
+  glutReshapeFunc([](int width, int height){
+    glViewport(0, 0, width, height);
+    web_view->Resize(width, height);
   });
 
   glutDisplayFunc([](){
@@ -197,22 +181,11 @@ int main(int argc, char* argv[]) {
   });
 
   glutCloseFunc([](){
-    DestroyShaders();
-    DestroyVBO();
-    DestroyTexture();
+    DestroyResources();
     swift::Gui::CleanUp();
   });
 
-  CreateTexture();
-  CreateShaders();
-  CreateVBO();
-
-  swift::WebView webView("https://www.youtube.com/watch?v=ghV21DlDOug");
-
-  webView.SetDrawCallback([](const std::vector<swift::Rect>& dirtyRects, const char* data){
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 960, 640, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
-    CheckError("Texture update issue");
-  });
+  CreateResources();
 
   glutMainLoop();
 

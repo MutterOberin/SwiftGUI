@@ -21,11 +21,12 @@ class WebView {
 
  public:
 
-  WebView(const std::string& url);
+  WebView(const std::string& url, int width, int height);
   virtual ~WebView();
 
   void SetDrawCallback(const DrawCallback& callback);
 
+  void Resize(int width, int height);
   void Reload(bool ignoreCache = false);
 
   void ShowDevTools();

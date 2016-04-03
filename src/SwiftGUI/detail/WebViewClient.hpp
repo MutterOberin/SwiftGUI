@@ -24,7 +24,7 @@ namespace detail {
 
 class WebViewClient : public CefClient, public CefRenderHandler {
  public:
-  WebViewClient(int width=960, int height=640)
+  WebViewClient(int width, int height)
   : width_(width)
   , height_(height) {}
 
@@ -34,6 +34,11 @@ class WebViewClient : public CefClient, public CefRenderHandler {
 
   virtual CefRefPtr<CefRenderHandler> GetRenderHandler() {
     return this;
+  }
+
+  void Resize(int width, int height) {
+    width_ = width;
+    height_ = height;
   }
 
   bool GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect) {
@@ -50,7 +55,7 @@ class WebViewClient : public CefClient, public CefRenderHandler {
         rects[i].width = dirtyRects[i].width;
         rects[i].height = dirtyRects[i].height;
       }
-      callback_(rects, (char*)buffer);
+      callback_(width, height, rects, (char*)buffer);
     }
   }
 

@@ -25,7 +25,7 @@ struct Rect {
   int height;
 };
 
-typedef std::function<void(const std::vector<Rect>&, const char*)> DrawCallback;
+typedef std::function<void(int, int, const std::vector<Rect>&, const char*)> DrawCallback;
 
 namespace detail {
 
