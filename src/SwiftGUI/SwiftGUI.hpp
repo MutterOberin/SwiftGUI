@@ -19,10 +19,10 @@ namespace swift {
 class Gui {
 
  public:
-  Gui(int argc, char *argv[]);
-  virtual ~Gui();
+  static void Init(int argc, char *argv[]);
+  static void CleanUp();
 
-  void Update();
+  static void Update();
 };
 
 }

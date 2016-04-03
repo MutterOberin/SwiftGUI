@@ -40,7 +40,7 @@ bool WriteTga(const std::string& filename, const char* data, unsigned width, uns
 // -----------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
 
-  swift::Gui gui(argc, argv);
+  swift::Gui::Init(argc, argv);
 
   swift::WebView webView("https://www.youtube.com/watch?v=ghV21DlDOug");
 
@@ -48,11 +48,13 @@ int main(int argc, char *argv[]) {
     WriteTga("test.tga", data, 960, 640);
   });
 
-  webView.ShowDevTools();
+  // webView.ShowDevTools();
 
   while (true) {
-    gui.Update();
+    swift::Gui::Update();
   }
+
+  swift::Gui::CleanUp();
 
   return 0;
 }

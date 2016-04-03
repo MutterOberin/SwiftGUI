@@ -19,7 +19,7 @@
 
 namespace swift {
 
-Gui::Gui(int argc, char *argv[]) {
+void Gui::Init(int argc, char *argv[]) {
   CefMainArgs args(argc, argv);
 
   int result = CefExecuteProcess(args, 0, 0);
@@ -34,7 +34,7 @@ Gui::Gui(int argc, char *argv[]) {
   }
 }
 
-Gui::~Gui() {
+void Gui::CleanUp() {
   CefShutdown();
 }
 

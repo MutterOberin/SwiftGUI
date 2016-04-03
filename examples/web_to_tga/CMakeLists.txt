@@ -11,7 +11,6 @@ add_dependencies(${TARGET_NAME} SwiftGUI)
 
 target_link_libraries(${TARGET_NAME} SwiftGUI)
 
-install(FILES ${TARGET_NAME}.sh DESTINATION "bin" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 install(TARGETS ${TARGET_NAME}
   RUNTIME DESTINATION bin
 )

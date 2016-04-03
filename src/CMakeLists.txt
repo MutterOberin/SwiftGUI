@@ -15,14 +15,14 @@ file(GLOB FILES_PUBLIC_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CEF_DIR}
+    ${CEF_INCLUDE_DIR}
 )
 
 link_directories(${CEF_DIR}/lib)
 
 add_library(${TARGET_NAME} SHARED ${FILES_SRC})
 
-target_link_libraries(${TARGET_NAME} cef cef_dll_wrapper)
+target_link_libraries(${TARGET_NAME} ${CEF_LIBRARIES})
 
 install(FILES ${FILES_PUBLIC_HEADERS} DESTINATION "include/SwiftGUI")
 install(TARGETS ${TARGET_NAME}
