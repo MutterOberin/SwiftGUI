@@ -28,6 +28,7 @@ WebView::WebView(const std::string& url, int width, int height) {
   std::size_t windowHandle = 0;
   info.SetAsWindowless(windowHandle, true);
   browserSettings.windowless_frame_rate = 60;
+  browserSettings.background_color = CefColorSetARGB(150, 255, 255, 255);
 
   browser_->Get() = CefBrowserHost::CreateBrowserSync(info, client_,
             url,
@@ -43,17 +44,17 @@ void WebView::SetDrawCallback(const DrawCallback& callback) {
   client_->SetDrawCallback(callback);
 }
 
-void WebView::Resize(int width, int height) {
+void WebView::Resize(int width, int height) const {
   client_->Resize(width, height);
   browser_->Get()->GetHost()->WasResized();
 }
 
-void WebView::Reload(bool ignoreCache) {
+void WebView::Reload(bool ignoreCache) const {
   if (ignoreCache) browser_->Get()->ReloadIgnoreCache();
   else             browser_->Get()->Reload();
 }
 
-void WebView::InjectMouseMove(int x, int y) {
+void WebView::InjectMouseMove(int x, int y) const {
   CefMouseEvent event;
   event.modifiers = 0;
   event.x = x;
@@ -62,7 +63,7 @@ void WebView::InjectMouseMove(int x, int y) {
   browser_->Get()->GetHost()->SendMouseMoveEvent(event, false);
 }
 
-void WebView::InjectMouseWheel(int direction, int x, int y) {
+void WebView::InjectMouseWheel(int direction, int x, int y) const {
   CefMouseEvent event;
   event.modifiers = 0;
   event.x = x;
@@ -71,7 +72,7 @@ void WebView::InjectMouseWheel(int direction, int x, int y) {
   browser_->Get()->GetHost()->SendMouseWheelEvent(event, 0, direction);
 }
 
-void WebView::InjectButtonDown(int button, int x, int y) {
+void WebView::InjectButtonDown(int button, int x, int y) const {
   CefMouseEvent event;
   event.modifiers = 0;
   event.x = x;
@@ -80,7 +81,7 @@ void WebView::InjectButtonDown(int button, int x, int y) {
   browser_->Get()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, false, 1);
 }
 
-void WebView::InjectButtonUp(int button, int x, int y) {
+void WebView::InjectButtonUp(int button, int x, int y) const {
   CefMouseEvent event;
   event.modifiers = 0;
   event.x = x;
@@ -89,7 +90,7 @@ void WebView::InjectButtonUp(int button, int x, int y) {
   browser_->Get()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, true, 1);
 }
 
-void WebView::InjectKeyDown(unsigned char key) {
+void WebView::InjectKeyDown(unsigned char key) const {
   CefKeyEvent event;
   event.character = key;
   event.type = KEYEVENT_CHAR;
@@ -97,12 +98,23 @@ void WebView::InjectKeyDown(unsigned char key) {
   browser_->Get()->GetHost()->SendKeyEvent(event);
 }
 
-void WebView::InjectKeyUp(unsigned char key) {
+void WebView::InjectKeyUp(unsigned char key) const {
   CefKeyEvent event;
   event.character = key;
   event.type = KEYEVENT_KEYUP;
 
   browser_->Get()->GetHost()->SendKeyEvent(event);
+}
+
+void WebView::call_javascript_impl(std::string const& method, std::vector<std::string> const& args) const {
+  std::string call(method + "( ");
+  for (auto& s: args) {
+    call += s + ",";
+  }
+  call.back() = ')';
+
+  CefRefPtr<CefFrame> frame = browser_->Get()->GetMainFrame();
+  frame->ExecuteJavaScript(call, frame->GetURL(), 0);
 }
 
 }

@@ -19,8 +19,20 @@ if (GLEW_FOUND AND GLUT_FOUND AND OPENGL_FOUND)
     )
 
     install(TARGETS ${TARGET_NAME}
-      RUNTIME DESTINATION bin
+        RUNTIME DESTINATION "bin"
     )
+
+    set(DATA
+        "data/gui.css"
+        "data/gui.html"
+        "data/jquery-2.2.3.min.js"
+    )
+
+    install(FILES ${DATA}
+        DESTINATION "share"
+    )
+
+
 else (GLEW_FOUND AND GLUT_FOUND AND OPENGL_FOUND)
     message("freeglut is required to build the opengl example")
 endif (GLEW_FOUND AND GLUT_FOUND AND OPENGL_FOUND)

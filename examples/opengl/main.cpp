@@ -137,7 +137,8 @@ void DestroyResources() {
 int main(int argc, char* argv[]) {
   swift::Gui::Init(argc, argv);
 
-  web_view = new swift::WebView("https://www.google.de/webhp?hl=de", WIDTH, HEIGHT);
+  web_view = new swift::WebView("data/gui.html", WIDTH, HEIGHT);
+  // web_view = new swift::WebView("https://www.google.de/webhp?hl=de", WIDTH, HEIGHT);
 
   web_view->SetDrawCallback([](int width, int height, const std::vector<swift::Rect>& dirtyRects, const char* data) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);

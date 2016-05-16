@@ -14,6 +14,7 @@
 
 // includes  -------------------------------------------------------------------
 #include "types.hpp"
+#include "helpers.hpp"
 
 namespace swift {
 
@@ -26,19 +27,27 @@ class WebView {
 
   void SetDrawCallback(const DrawCallback& callback);
 
-  void Resize(int width, int height);
-  void Reload(bool ignoreCache = false);
+  template<typename ...Args>
+  void CallJavascript(std::string const& method, Args&& ... a) const {
+    std::vector<std::string> args = {(to_string(a))...};
+    call_javascript_impl(method, args);
+  }
 
-  void InjectMouseMove(int x, int y);
-  void InjectMouseWheel(int direction, int x, int y);
+  void Resize(int width, int height)                 const;
+  void Reload(bool ignoreCache = false)              const;
 
-  void InjectButtonDown(int button, int x, int y);
-  void InjectButtonUp(int button, int x, int y);
+  void InjectMouseMove(int x, int y)                 const;
+  void InjectMouseWheel(int direction, int x, int y) const;
 
-  void InjectKeyDown(unsigned char key);
-  void InjectKeyUp(unsigned char key);
+  void InjectButtonDown(int button, int x, int y)    const;
+  void InjectButtonUp(int button, int x, int y)      const;
+
+  void InjectKeyDown(unsigned char key)              const;
+  void InjectKeyUp(unsigned char key)                const;
 
  private:
+  void call_javascript_impl(std::string const& method, std::vector<std::string> const& args) const;
+
   detail::Browser*        browser_;
   detail::WebViewClient*  client_;
 
