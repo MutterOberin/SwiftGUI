@@ -32,6 +32,8 @@ void Gui::Init(int argc, char *argv[]) {
   CefRefPtr<detail::App> app(new detail::App());
 
   CefSettings settings;
+  settings.remote_debugging_port = 8999;
+
   if (!CefInitialize(args, settings, app, 0)) {
     std::cout << "Warning!" << std::endl;;
   }

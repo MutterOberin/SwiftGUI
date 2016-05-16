@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
-// This file is part of Swift3D.                                              //
+// This file is part of SwiftGUI.                                             //
 //                                                                            //
 // Copyright: (c) 2011-2015 Simon Schneegans & Felix Lauer                    //
 //                                                                            //
@@ -173,6 +173,14 @@ int main(int argc, char* argv[]) {
 
   glutKeyboardFunc([](unsigned char key, int x, int y){
     web_view->InjectKeyDown(key);
+
+    if (key == '1') {
+      web_view->CallJavascript("next");
+    } else if (key == '2') {
+      web_view->CallJavascript("google");
+    } else {
+      web_view->CallJavascript("print", "'" + std::string(1, key) + "'");
+    }
   });
 
   glutKeyboardUpFunc([](unsigned char key, int x, int y){

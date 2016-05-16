@@ -10,7 +10,15 @@
 
 <script type="text/javascript">
   function print(text) {
-    console.log("text")
+    $(".box").last().append(text + " ");
+  }
+
+  function next() {
+    $("body").append("<div class='box'></div>");
+  }
+
+  function google() {
+    $("body").append("<div class='box'><iframe width='100%' src='https://www.youtube.com/embed/VmUGe8KDdGI' frameborder='0' allowfullscreen></iframe></div>");
   }
 
   $(document).ready( function() {
@@ -20,8 +28,6 @@
 
 </head>
 <body>
-<div id="text">
-  huhu
-</div>
+<div class="box"></div>
 </body>
 </html>

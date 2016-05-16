@@ -26,7 +26,8 @@ namespace detail {
 
 class WebViewClient : public CefClient,
                       public CefRenderHandler,
-                      public CefRequestHandler {
+                      public CefRequestHandler,
+                      public CefDisplayHandler {
  public:
   WebViewClient(int width, int height)
   : width_(width)
@@ -36,12 +37,24 @@ class WebViewClient : public CefClient,
     callback_ = callback;
   }
 
+  virtual CefRefPtr<CefDisplayHandler> GetDisplayHandler() override {
+    return this;
+  }
+
   virtual CefRefPtr<CefRenderHandler> GetRenderHandler() override {
     return this;
   }
 
   virtual CefRefPtr<CefRequestHandler> GetRequestHandler() override {
     return this;
+  }
+
+  virtual bool OnConsoleMessage(
+      CefRefPtr<CefBrowser> browser,
+      CefString const& message, CefString const& source, int line) {
+
+    std::cout << "[" << source.ToString() << ":" << line << "] " << message.ToString() << std::endl;
+    return true;
   }
 
   virtual CefRefPtr<CefResourceHandler> GetResourceHandler(

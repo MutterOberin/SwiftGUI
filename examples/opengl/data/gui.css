@@ -1,8 +1,8 @@
-#text {
-  width: 290px;
+.box {
   color: rgb(255, 171, 235);
   background-color: rgba(0, 0, 0, 0.8);
   padding: 10px;
+  margin: 5px;
   border-radius: 3px;
   box-shadow: 0 0 10px #000;
   font-family: sans-serif;
