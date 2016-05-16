@@ -28,7 +28,6 @@ WebView::WebView(const std::string& url, int width, int height) {
   std::size_t windowHandle = 0;
   info.SetAsWindowless(windowHandle, true);
   browserSettings.windowless_frame_rate = 60;
-  browserSettings.background_color = CefColorSetARGB(150, 255, 255, 255);
 
   browser_->Get() = CefBrowserHost::CreateBrowserSync(info, client_,
             url,

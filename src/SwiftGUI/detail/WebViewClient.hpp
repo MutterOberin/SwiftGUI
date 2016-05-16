@@ -16,13 +16,17 @@
 #include "../types.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <include/cef_client.h>
 #include <include/cef_render_handler.h>
+#include <include/wrapper/cef_stream_resource_handler.h>
 
 namespace swift {
 namespace detail {
 
-class WebViewClient : public CefClient, public CefRenderHandler {
+class WebViewClient : public CefClient,
+                      public CefRenderHandler,
+                      public CefRequestHandler {
  public:
   WebViewClient(int width, int height)
   : width_(width)
@@ -32,8 +36,45 @@ class WebViewClient : public CefClient, public CefRenderHandler {
     callback_ = callback;
   }
 
-  virtual CefRefPtr<CefRenderHandler> GetRenderHandler() {
+  virtual CefRefPtr<CefRenderHandler> GetRenderHandler() override {
     return this;
+  }
+
+  virtual CefRefPtr<CefRequestHandler> GetRequestHandler() override {
+    return this;
+  }
+
+  virtual CefRefPtr<CefResourceHandler> GetResourceHandler(
+    CefRefPtr<CefBrowser> browser,
+    CefRefPtr<CefFrame> frame,
+    CefRefPtr<CefRequest> request) override {
+
+    std::string url(request->GetURL().ToString());
+
+    if (url.find("file://") == 0) {
+      std::string path(url.substr(7));
+      std::string ext(url.substr(url.find_last_of('.')));
+
+      std::ifstream input(path, std::ios::binary);
+      std::vector<char> buffer(
+              (std::istreambuf_iterator<char>(input)),
+              (std::istreambuf_iterator<char>()));
+
+      CefRefPtr<CefStreamReader> stream = CefStreamReader::CreateForData(
+        static_cast<void*>(buffer.data()), buffer.size());
+
+      std::string mime("text/html");
+      if      (ext == ".png")  mime = "image/png";
+      else if (ext == ".jpg")  mime = "image/jpg";
+      else if (ext == ".jpeg") mime = "image/jpg";
+      else if (ext == ".js")   mime = "text/javascript";
+      else if (ext == ".css")  mime = "text/css";
+      else if (ext == ".woff") mime = "application/x-font-woff";
+
+      return new CefStreamResourceHandler(mime, stream);
+    }
+
+    return NULL;
   }
 
   void Resize(int width, int height) {

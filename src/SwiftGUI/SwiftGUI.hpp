@@ -13,6 +13,7 @@
 #define SWIFT_GUI_HPP
 
 // includes  -------------------------------------------------------------------
+#include <string>
 
 namespace swift {
 
@@ -20,6 +21,7 @@ class Gui {
 
  public:
   static void Init(int argc, char *argv[]);
+
   static void CleanUp();
 
   static void Update();

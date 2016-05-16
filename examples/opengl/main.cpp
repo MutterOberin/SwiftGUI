@@ -26,7 +26,6 @@ GLuint f_shader;
 GLuint program;
 GLuint vao;
 GLuint vertex_buffer;
-GLuint texcoord_buffer;
 GLuint texture;
 
 swift::WebView* web_view;
@@ -34,15 +33,14 @@ swift::WebView* web_view;
 const std::string V_SOURCE = R"(
   #version 400
 
-  layout(location=0) in vec4 in_Position;
-  layout(location=1) in vec2 in_TexCoord;
+  layout(location=0) in vec2 in_Position;
 
   out vec2 TexCoord;
 
   void main() {
-    gl_Position = in_Position;
-    TexCoord.x = in_TexCoord.x;
-    TexCoord.y = 1.0 - in_TexCoord.y;
+    gl_Position = vec4(in_Position, 0, 1);
+    TexCoord.x =  in_Position.x * 0.5 + 0.5;
+    TexCoord.y = -in_Position.y * 0.5 + 0.5;
   }
 )";
 
@@ -62,12 +60,7 @@ const std::string F_SOURCE = R"(
 void CreateResources() {
 
   // VBO -----------------------------------------------------------------------
-  GLfloat vertices[] = {
-    -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 0.0f, 1.0f,
-    -1.0f,  1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 0.0f, 1.0f
-  };
-
-  GLfloat texcoords[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+  GLfloat vertices[] = {-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
 
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
@@ -75,14 +68,8 @@ void CreateResources() {
   glGenBuffers(1, &vertex_buffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
   glEnableVertexAttribArray(0);
-
-  glGenBuffers(1, &texcoord_buffer);
-  glBindBuffer(GL_ARRAY_BUFFER, texcoord_buffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(texcoords), texcoords, GL_STATIC_DRAW);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(1);
 
   // Shader --------------------------------------------------------------------
   v_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -104,8 +91,8 @@ void CreateResources() {
   // Texture --------------------------------------------------------------------
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 void DestroyResources() {
@@ -115,7 +102,6 @@ void DestroyResources() {
   glDisableVertexAttribArray(0);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glDeleteBuffers(1, &texcoord_buffer);
   glDeleteBuffers(1, &vertex_buffer);
 
   glBindVertexArray(0);
@@ -137,7 +123,7 @@ void DestroyResources() {
 int main(int argc, char* argv[]) {
   swift::Gui::Init(argc, argv);
 
-  web_view = new swift::WebView("data/gui.html", WIDTH, HEIGHT);
+  web_view = new swift::WebView("file://../share/gui.html", WIDTH, HEIGHT);
   // web_view = new swift::WebView("https://www.google.de/webhp?hl=de", WIDTH, HEIGHT);
 
   web_view->SetDrawCallback([](int width, int height, const std::vector<swift::Rect>& dirtyRects, const char* data) {
@@ -161,6 +147,10 @@ int main(int argc, char* argv[]) {
 
   glewExperimental = GL_TRUE;
   glewInit();
+
+  glClearColor(1, 1, 1, 0);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glutReshapeFunc([](int width, int height){
     glViewport(0, 0, width, height);
