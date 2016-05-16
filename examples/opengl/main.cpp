@@ -137,7 +137,7 @@ void DestroyResources() {
 int main(int argc, char* argv[]) {
   swift::Gui::Init(argc, argv);
 
-  web_view = new swift::WebView("https://www.youtube.com/watch?v=ghV21DlDOug", WIDTH, HEIGHT);
+  web_view = new swift::WebView("https://www.google.de/webhp?hl=de", WIDTH, HEIGHT);
 
   web_view->SetDrawCallback([](int width, int height, const std::vector<swift::Rect>& dirtyRects, const char* data) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
@@ -178,6 +178,29 @@ int main(int argc, char* argv[]) {
   glutIdleFunc([](){
     swift::Gui::Update();
     glutPostRedisplay();
+  });
+
+  glutKeyboardFunc([](unsigned char key, int x, int y){
+    web_view->InjectKeyDown(key);
+  });
+
+  glutKeyboardUpFunc([](unsigned char key, int x, int y){
+    web_view->InjectKeyUp(key);
+  });
+
+  glutMouseFunc([](int button, int state, int x, int y){
+    if      (button == 3)        web_view->InjectMouseWheel( 10, x, y);
+    else if (button == 4)        web_view->InjectMouseWheel(-10, x, y);
+    else if (state == GLUT_DOWN) web_view->InjectButtonDown(button, x, y);
+    else                         web_view->InjectButtonUp(button, x, y);
+  });
+
+  glutMotionFunc([](int x, int y){
+    web_view->InjectMouseMove(x, y);
+  });
+
+  glutPassiveMotionFunc([](int x, int y){
+    web_view->InjectMouseMove(x, y);
   });
 
   glutCloseFunc([](){

@@ -29,7 +29,14 @@ class WebView {
   void Resize(int width, int height);
   void Reload(bool ignoreCache = false);
 
-  void ShowDevTools();
+  void InjectMouseMove(int x, int y);
+  void InjectMouseWheel(int direction, int x, int y);
+
+  void InjectButtonDown(int button, int x, int y);
+  void InjectButtonUp(int button, int x, int y);
+
+  void InjectKeyDown(unsigned char key);
+  void InjectKeyUp(unsigned char key);
 
  private:
   detail::Browser*        browser_;

@@ -9,42 +9,36 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef SWIFT_DETAIL_APP_HPP
+#define SWIFT_DETAIL_APP_HPP
+
 // includes  -------------------------------------------------------------------
-#include "SwiftGUI.hpp"
-
-#include "detail/App.hpp"
-
-#include <stdlib.h>
 #include <include/cef_app.h>
-
 #include <iostream>
 
 namespace swift {
+namespace detail {
 
-void Gui::Init(int argc, char *argv[]) {
-  CefMainArgs args(argc, argv);
+class App : public CefApp {
+ public:
 
-  int result = CefExecuteProcess(args, 0, 0);
-  if (result >= 0) {
-    exit(result);
+  // CefBrowserProcessHandler methods:
+  virtual void OnBeforeCommandLineProcessing(const CefString& process_type,
+      CefRefPtr<CefCommandLine> command_line) OVERRIDE {
+
+    if (process_type.empty()) {
+      command_line->AppendSwitch("enable-overlay-scrollbar");
+      command_line->AppendSwitch("enable-begin-frame-scheduling");
+      command_line->AppendSwitch("disable-gpu");
+      command_line->AppendSwitch("disable-gpu-compositing");
+    }
   }
 
-  CefRefPtr<detail::App> app(new detail::App());
-
-  CefSettings settings;
-  if (!CefInitialize(args, settings, app, 0)) {
-    std::cout << "Warning!" << std::endl;;
-  }
-}
-
-void Gui::CleanUp() {
-  CefShutdown();
-}
-
-void Gui::Update() {
-  CefDoMessageLoopWork();
-}
-
-
+ private:
+  IMPLEMENT_REFCOUNTING(App);
+};
 
 }
+}
+
+#endif // SWIFT_DETAIL_APP_HPP
