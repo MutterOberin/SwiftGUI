@@ -23,18 +23,26 @@
 	"folders":
 	[
 		{
-			"follow_symlinks": true,
-			"folder_exclude_patterns": ["build", "install"],
-			"path": ".."
+			"folder_exclude_patterns":
+			[
+				"build",
+				"install"
+			],
+			"path": "/home/schn_s7/Projects/SwiftGUI"
+		},
+		{
+			"path": "/tools/modulesystem/tools/cef/cef-3.2641/install/sled12.x86_64.gcc.release/include"
 		}
 	],
 	"settings":
 	{
 		"cc_include_options":
-	    [
-	        "-I${project_path}/../src",
-	        "-isystem", "${project_path}/../../../cef",
-	        "-isystem", "/tools/modulesystem/tools/cef/cef-3.2641/install/sled12.x86_64.gcc.release",
-	    ]
+		[
+			"-I${project_path}/../src",
+			"-isystem",
+			"${project_path}/../../../cef",
+			"-isystem",
+			"/tools/modulesystem/tools/cef/cef-3.2641/install/sled12.x86_64.gcc.release"
+		]
 	}
 }

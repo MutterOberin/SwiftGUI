@@ -22,18 +22,17 @@
 namespace swift {
 
 void Gui::Init(int argc, char *argv[]) {
-  CefMainArgs args(argc, argv);
 
-  int result = CefExecuteProcess(args, 0, 0);
+  CefRefPtr<detail::App> app(new detail::App());
+
+  CefMainArgs args(argc, argv);
+  int result = CefExecuteProcess(args, app.get(), 0);
   if (result >= 0) {
     exit(result);
   }
 
-  CefRefPtr<detail::App> app(new detail::App());
-
   CefSettings settings;
   settings.remote_debugging_port = 8999;
-
   if (!CefInitialize(args, settings, app, 0)) {
     std::cout << "Warning!" << std::endl;;
   }

@@ -17,9 +17,10 @@
 
 namespace swift {
 
-WebView::WebView(const std::string& url, int width, int height) {
-  client_ = new detail::WebViewClient(width, height);
-  browser_ = new detail::Browser();
+WebView::WebView(const std::string& url, int width, int height)
+: browser_(new detail::Browser())
+, client_(new detail::WebViewClient(width, height))
+, devToolsOpen_(false) {
 
   CefRefPtr<detail::WebViewClient> browserClient;
   CefWindowInfo info;
@@ -105,8 +106,8 @@ void WebView::InjectKeyUp(unsigned char key) const {
   browser_->Get()->GetHost()->SendKeyEvent(event);
 }
 
-void WebView::call_javascript_impl(std::string const& method, std::vector<std::string> const& args) const {
-  std::string call(method + "( ");
+void WebView::call_javascript_impl(std::string const& function, std::vector<std::string> const& args) const {
+  std::string call(function + "( ");
   for (auto& s: args) {
     call += s + ",";
   }
@@ -114,6 +115,32 @@ void WebView::call_javascript_impl(std::string const& method, std::vector<std::s
 
   CefRefPtr<CefFrame> frame = browser_->Get()->GetMainFrame();
   frame->ExecuteJavaScript(call, frame->GetURL(), 0);
+}
+
+void WebView::register_js_callback_impl(std::string const& name, std::function<void(std::vector<Any> const&)> callback) {
+  client_->register_js_callback(name, callback);
+}
+
+void WebView::ToggleDevTools() {
+  if (devToolsOpen_) CloseDevTools();
+  else               ShowDevTools();
+}
+
+void WebView::ShowDevTools() {
+  CefWindowInfo windowInfo;
+  CefRefPtr<CefClient> client;
+  CefBrowserSettings settings;
+
+  // MainContext::Get()->GetRootWindowManager()->CreateRootWindowAsPopup(
+  //     !is_devtools, is_osr(), popupFeatures, windowInfo, client, settings);
+
+  browser_->Get()->GetHost()->ShowDevTools(windowInfo, client, settings, CefPoint());
+  devToolsOpen_ = true;
+}
+
+void WebView::CloseDevTools() {
+  browser_->Get()->GetHost()->CloseDevTools();
+  devToolsOpen_ = false;
 }
 
 }

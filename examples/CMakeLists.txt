@@ -15,6 +15,8 @@ file(GLOB_RECURSE CEF_LOCALES ${CEF_RESOURCE_DIR}/locales/*.pak)
 
 install(FILES ${CEF_RESOURCES} DESTINATION "bin")
 install(FILES ${CEF_LOCALES} DESTINATION "bin/locales")
+install(DIRECTORY "third-party" DESTINATION "share")
 
 add_subdirectory(web_to_tga)
-add_subdirectory(opengl)
+add_subdirectory(freeglut)
+add_subdirectory(vista)

@@ -20,6 +20,8 @@
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
+int frames = 0;
+int startTime = 0;
 
 GLuint v_shader;
 GLuint f_shader;
@@ -37,8 +39,19 @@ const std::string V_SOURCE = R"(
 
   out vec2 TexCoord;
 
+  uniform bool  fullScreen;
+  uniform float time;
+
   void main() {
-    gl_Position = vec4(in_Position, 0, 1);
+    if (fullScreen) {
+      gl_Position = vec4(in_Position, 0, 1);
+    } else {
+      gl_Position = vec4(
+        cos(time) * in_Position.x - sin(time) * in_Position.y,
+        sin(time) * in_Position.x + cos(time) * in_Position.y,
+        0, 1);
+    }
+
     TexCoord.x =  in_Position.x * 0.5 + 0.5;
     TexCoord.y = -in_Position.y * 0.5 + 0.5;
   }
@@ -50,10 +63,15 @@ const std::string F_SOURCE = R"(
   in vec2 TexCoord;
   out vec4 out_Color;
 
-  uniform sampler2D ourTexture;
+  uniform bool  fullScreen;
+  uniform sampler2D tex;
 
   void main() {
-    out_Color = texture(ourTexture, TexCoord);
+    if (fullScreen) {
+      out_Color = texture(tex, TexCoord);
+    } else {
+      out_Color = vec4(TexCoord, 0, 1);
+    }
   }
 )";
 
@@ -130,6 +148,18 @@ int main(int argc, char* argv[]) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
   });
 
+  web_view->RegisterCallback("quit", ([]() {
+    glutLeaveMainLoop();
+  }));
+
+  web_view->RegisterCallback<double>("test", ([](double n) {
+    std::cout << "huhuhu " << n << std::endl;
+  }));
+
+  web_view->RegisterCallback<double>("stats", [](double number) {
+    std::cout << "Currently there are  " << number << " boxes." << std::endl;
+  });
+
   glutInit(&argc, argv);
   glutInitContextVersion(4, 0);
   glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
@@ -148,8 +178,9 @@ int main(int argc, char* argv[]) {
   glewExperimental = GL_TRUE;
   glewInit();
 
-  glClearColor(1, 1, 1, 0);
+  glClearColor(0.5, 0.5, 0.5, 0);
   glEnable(GL_BLEND);
+  glDisable(GL_DEPTH_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glutReshapeFunc([](int width, int height){
@@ -160,6 +191,13 @@ int main(int argc, char* argv[]) {
   glutDisplayFunc([](){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glUniform1i(glGetUniformLocation(program, "fullScreen"), false);
+    glUniform1f(glGetUniformLocation(program, "time"), 0.0001f * glutGet(GLUT_ELAPSED_TIME));
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glUniform1i(glGetUniformLocation(program, "fullScreen"), true);
+
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glutSwapBuffers();
@@ -167,20 +205,21 @@ int main(int argc, char* argv[]) {
   });
 
   glutIdleFunc([](){
+    if (++frames == 100) {
+      frames = 0;
+      int time = glutGet(GLUT_ELAPSED_TIME);
+      float fps = 100.f * 1000.f / (time - startTime);
+      startTime = time;
+
+      web_view->CallJavascript("set_fps", fps);
+    }
+
     swift::Gui::Update();
     glutPostRedisplay();
   });
 
   glutKeyboardFunc([](unsigned char key, int x, int y){
     web_view->InjectKeyDown(key);
-
-    if (key == '1') {
-      web_view->CallJavascript("next");
-    } else if (key == '2') {
-      web_view->CallJavascript("google");
-    } else {
-      web_view->CallJavascript("print", "'" + std::string(1, key) + "'");
-    }
   });
 
   glutKeyboardUpFunc([](unsigned char key, int x, int y){

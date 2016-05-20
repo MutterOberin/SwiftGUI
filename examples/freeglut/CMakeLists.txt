@@ -22,15 +22,8 @@ if (GLEW_FOUND AND GLUT_FOUND AND OPENGL_FOUND)
         RUNTIME DESTINATION "bin"
     )
 
-    set(DATA
-        "data/gui.css"
-        "data/gui.html"
-        "data/jquery-2.2.3.min.js"
-    )
-
-    install(FILES ${DATA}
-        DESTINATION "share"
-    )
+    install(FILES "data/gui.css" DESTINATION "share")
+    install(FILES "data/gui.html" DESTINATION "share")
 
 
 else (GLEW_FOUND AND GLUT_FOUND AND OPENGL_FOUND)
