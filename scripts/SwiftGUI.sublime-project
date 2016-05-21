@@ -28,7 +28,7 @@
 				"build",
 				"install"
 			],
-			"path": "/home/schn_s7/Projects/SwiftGUI"
+			"path": "${project_path}/../.."
 		},
 		{
 			"path": "/tools/modulesystem/tools/cef/cef-3.2641/install/sled12.x86_64.gcc.release/include"

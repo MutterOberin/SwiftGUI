@@ -220,6 +220,12 @@ int main(int argc, char* argv[]) {
 
   glutKeyboardFunc([](unsigned char key, int x, int y){
     web_view->InjectKeyDown(key);
+
+    if (key == '1') {
+      web_view->Reload();
+    } else if (key == '2') {
+      web_view->ShowDevTools();
+    }
   });
 
   glutKeyboardUpFunc([](unsigned char key, int x, int y){

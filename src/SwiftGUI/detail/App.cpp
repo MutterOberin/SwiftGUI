@@ -10,49 +10,41 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // includes  -------------------------------------------------------------------
-#include "SwiftGUI.hpp"
+#include "App.hpp"
 
-#include "Logger.hpp"
-#include "detail/App.hpp"
+#include "JSHandler.hpp"
 
-#include <include/cef_app.h>
-#include <stdlib.h>
 #include <iostream>
 
 namespace swift {
+namespace detail {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Gui::Init(int argc, char *argv[]) {
+void App::OnBeforeCommandLineProcessing(const CefString& process_type,
+    CefRefPtr<CefCommandLine> command_line) {
 
-  CefRefPtr<detail::App> app(new detail::App());
-
-  CefMainArgs args(argc, argv);
-  int result = CefExecuteProcess(args, app.get(), 0);
-  if (result >= 0) {
-    exit(result);
-  }
-
-  CefSettings settings;
-  settings.remote_debugging_port = 8999;
-  if (!CefInitialize(args, settings, app, 0)) {
-    SWIFT_ERROR << "Failed to initialize CEF. Gui will not work at all"
-                << std::endl;
+  if (process_type.empty()) {
+    command_line->AppendSwitch("enable-overlay-scrollbar");
+    command_line->AppendSwitch("enable-begin-frame-scheduling");
+    command_line->AppendSwitch("disable-gpu");
+    command_line->AppendSwitch("disable-gpu-compositing");
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Gui::CleanUp() {
-  CefShutdown();
+void App::OnContextCreated(CefRefPtr<CefBrowser> browser,
+                               CefRefPtr<CefFrame> frame,
+                               CefRefPtr<CefV8Context> context) {
+
+  CefRefPtr<CefV8Value> object = context->GetGlobal();
+  CefRefPtr<CefV8Value> func = CefV8Value::CreateFunction("call_native", new JSHandler(browser));
+  object->SetValue("call_native", func, V8_PROPERTY_ATTRIBUTE_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Gui::Update() {
-  CefDoMessageLoopWork();
+}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-}

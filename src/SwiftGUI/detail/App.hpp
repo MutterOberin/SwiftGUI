@@ -15,9 +15,6 @@
 // includes  -------------------------------------------------------------------
 #include <include/cef_app.h>
 #include <include/cef_render_process_handler.h>
-#include <iostream>
-
-#include "JSHandler.hpp"
 
 namespace swift {
 namespace detail {
@@ -25,45 +22,24 @@ namespace detail {
 class App : public CefApp,
             public CefRenderProcessHandler {
 
+ ///////////////////////////////////////////////////////////////////////////////
+ // ----------------------------------------------------------- public interface
  public:
 
   virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() override {
     return this;
   }
 
-  // CefBrowserProcessHandler methods:
-  virtual void OnBeforeCommandLineProcessing(const CefString& process_type,
-      CefRefPtr<CefCommandLine> command_line) override {
-
-    if (process_type.empty()) {
-      command_line->AppendSwitch("enable-overlay-scrollbar");
-      command_line->AppendSwitch("enable-begin-frame-scheduling");
-      command_line->AppendSwitch("disable-gpu");
-      command_line->AppendSwitch("disable-gpu-compositing");
-    }
-  }
+  virtual void OnBeforeCommandLineProcessing(
+                                const CefString& process_type,
+                                CefRefPtr<CefCommandLine> command_line) override;
 
   virtual void OnContextCreated(CefRefPtr<CefBrowser> browser,
-                                 CefRefPtr<CefFrame> frame,
-                                 CefRefPtr<CefV8Context> context) override {
+                                CefRefPtr<CefFrame> frame,
+                                CefRefPtr<CefV8Context> context) override ;
 
-    CefRefPtr<CefV8Value> object = context->GetGlobal();
-    CefRefPtr<CefV8Value> func = CefV8Value::CreateFunction("call_native", new JSHandler(browser));
-    object->SetValue("call_native", func, V8_PROPERTY_ATTRIBUTE_NONE);
-  }
-
-  virtual void OnContextReleased(CefRefPtr<CefBrowser> browser,
-                                 CefRefPtr<CefFrame> frame,
-                                 CefRefPtr<CefV8Context> context) override {
-
-  }
-
-  virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
-                                 CefProcessId source_process,
-                                 CefRefPtr<CefProcessMessage> message) override {
-    return false;
-  }
-
+ ///////////////////////////////////////////////////////////////////////////////
+ // ---------------------------------------------------------- private interface
  private:
   IMPLEMENT_REFCOUNTING(App);
 };

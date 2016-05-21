@@ -9,13 +9,14 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef SWIFT_HELPERS_HPP
-#define SWIFT_HELPERS_HPP
+#ifndef SWIFT_UTILS_HPP
+#define SWIFT_UTILS_HPP
 
 // includes  -------------------------------------------------------------------
 #include <sstream>
 
 namespace swift {
+namespace utils {
 
 template <typename T>
 std::string to_string(T const& v) {
@@ -25,5 +26,6 @@ std::string to_string(T const& v) {
 }
 
 }
+}
 
-#endif // SWIFT_HELPERS_HPP
+#endif // SWIFT_UTILS_HPP

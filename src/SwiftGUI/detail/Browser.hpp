@@ -19,6 +19,9 @@ namespace swift {
 namespace detail {
 
 class Browser {
+
+ ///////////////////////////////////////////////////////////////////////////////
+ // ----------------------------------------------------------- public interface
  public:
   CefRefPtr<CefBrowser>& Get() {
     return browser_;
@@ -28,6 +31,8 @@ class Browser {
     return browser_;
   }
 
+ ///////////////////////////////////////////////////////////////////////////////
+ // ---------------------------------------------------------- private interface
  private:
   CefRefPtr<CefBrowser> browser_;
 

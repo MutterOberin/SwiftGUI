@@ -19,6 +19,8 @@ namespace swift {
 
 class Gui {
 
+ ///////////////////////////////////////////////////////////////////////////////
+ // ----------------------------------------------------------- public interface
  public:
   static void Init(int argc, char *argv[]);
 

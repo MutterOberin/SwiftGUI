@@ -15,13 +15,15 @@
 // includes  -------------------------------------------------------------------
 #include <iostream>
 #include "types.hpp"
-#include "helpers.hpp"
+#include "utils.hpp"
 #include "Any.hpp"
 
 namespace swift {
 
 class WebView {
 
+ ///////////////////////////////////////////////////////////////////////////////
+ // ----------------------------------------------------------- public interface
  public:
 
   WebView(const std::string& url, int width, int height);
@@ -31,7 +33,7 @@ class WebView {
 
   template<typename ...Args>
   void CallJavascript(std::string const& function, Args&& ... a) const {
-    std::vector<std::string> args = {(to_string(a))...};
+    std::vector<std::string> args = {(utils::to_string(a))...};
     call_javascript_impl(function, args);
   }
 
@@ -86,6 +88,8 @@ class WebView {
   void ShowDevTools();
   void CloseDevTools();
 
+ ///////////////////////////////////////////////////////////////////////////////
+ // ---------------------------------------------------------- private interface
  private:
   void call_javascript_impl(std::string const& function, std::vector<std::string> const& args) const;
 

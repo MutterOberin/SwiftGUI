@@ -19,4 +19,3 @@ install(DIRECTORY "third-party" DESTINATION "share")
 
 add_subdirectory(web_to_tga)
 add_subdirectory(freeglut)
-add_subdirectory(vista)
