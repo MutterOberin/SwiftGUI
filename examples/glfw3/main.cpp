@@ -16,12 +16,12 @@
 #include <SwiftGUI/WebView.hpp>
 
 #include <GL/glew.h>
-#include <GL/freeglut.h>
+#include <GLFW/glfw3.h>
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
 int frames = 0;
-int startTime = 0;
+float startTime = 0;
 
 GLuint v_shader;
 GLuint f_shader;
@@ -29,6 +29,8 @@ GLuint program;
 GLuint vao;
 GLuint vertex_buffer;
 GLuint texture;
+
+GLFWwindow* window;
 
 swift::WebView* web_view;
 
@@ -74,6 +76,24 @@ const std::string F_SOURCE = R"(
     }
   }
 )";
+
+int ToSwiftMods(int glfw_mods) {
+  int mods = 0;
+
+  if (glfw_mods & GLFW_MOD_SHIFT)   mods |= (int)swift::Modifier::SHIFT;
+  if (glfw_mods & GLFW_MOD_CONTROL) mods |= (int)swift::Modifier::CONTROL;
+  if (glfw_mods & GLFW_MOD_ALT)     mods |= (int)swift::Modifier::ALT;
+  if (glfw_mods & GLFW_MOD_SUPER)   mods |= (int)swift::Modifier::COMMAND;
+
+  return mods;
+}
+
+swift::Button ToSwiftButton(int glfw_button) {
+  if (glfw_button == GLFW_MOUSE_BUTTON_LEFT)   return swift::Button::LEFT;
+  if (glfw_button == GLFW_MOUSE_BUTTON_RIGHT)  return swift::Button::RIGHT;
+  if (glfw_button == GLFW_MOUSE_BUTTON_MIDDLE) return swift::Button::MIDDLE;
+  return (swift::Button)glfw_button;
+}
 
 void CreateResources() {
 
@@ -155,7 +175,7 @@ int main(int argc, char* argv[]) {
   });
 
   web_view->RegisterCallback("quit", ([]() {
-    glutLeaveMainLoop();
+    glfwSetWindowShouldClose(window, GL_TRUE);
   }));
 
   web_view->RegisterCallback<double>("test", ([](double n) {
@@ -166,20 +186,18 @@ int main(int argc, char* argv[]) {
     std::cout << "Currently there are  " << number << " boxes." << std::endl;
   });
 
-  glutInit(&argc, argv);
-  glutInitContextVersion(4, 0);
-  glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
-  glutInitContextProfile(GLUT_CORE_PROFILE);
+  if (!glfwInit()) {
+    exit(EXIT_FAILURE);
+  }
 
-  glutSetOption(
-    GLUT_ACTION_ON_WINDOW_CLOSE,
-    GLUT_ACTION_GLUTMAINLOOP_RETURNS
-  );
-
-  glutInitWindowSize(WIDTH, HEIGHT);
-  glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-
-  glutCreateWindow("SwiftGui Example");
+  window = glfwCreateWindow(WIDTH, HEIGHT, "glfw example", nullptr, nullptr);
+  if (!window)
+  {
+      glfwTerminate();
+      exit(EXIT_FAILURE);
+  }
+  glfwMakeContextCurrent(window);
+  // glfwSwapInterval(1);
 
   glewExperimental = GL_TRUE;
   glewInit();
@@ -189,16 +207,63 @@ int main(int argc, char* argv[]) {
   glDisable(GL_DEPTH_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  glutReshapeFunc([](int width, int height){
+  glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height){
     glViewport(0, 0, width, height);
     web_view->Resize(width, height);
   });
 
-  glutDisplayFunc([](){
+  glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+      web_view->InjectKeyDown(key, scancode, ToSwiftMods(mods));
+
+      if (key == '1') {
+        web_view->Reload();
+      } else if (key == '2') {
+        web_view->ShowDevTools();
+      }
+    } else if (action == GLFW_RELEASE) {
+      web_view->InjectKeyUp(key, scancode, ToSwiftMods(mods));
+    }
+  });
+
+  glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int key){
+    web_view->InjectChar(key);
+  });
+
+  glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y){
+    web_view->InjectMouseMove(x, y);
+  });
+
+  glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+    if (action == GLFW_PRESS) {
+      web_view->InjectButtonDown(ToSwiftButton(button));
+    } else if (action == GLFW_RELEASE) {
+      web_view->InjectButtonUp(ToSwiftButton(button));
+    }
+  });
+
+  glfwSetScrollCallback(window, [](GLFWwindow* window, double x, double y){
+    web_view->InjectMouseWheel(x*10, y*10);
+  });
+
+  CreateResources();
+
+  while(!glfwWindowShouldClose(window)) {
+    float time = glfwGetTime();
+    if (++frames == 100) {
+      frames = 0;
+      float fps = 100.f / (time - startTime);
+      startTime = time;
+
+      web_view->CallJavascript("set_fps", fps);
+    }
+
+    swift::Gui::Update();
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUniform1i(glGetUniformLocation(program, "fullScreen"), false);
-    glUniform1f(glGetUniformLocation(program, "time"), 0.0001f * glutGet(GLUT_ELAPSED_TIME));
+    glUniform1f(glGetUniformLocation(program, "time"), time);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -206,62 +271,12 @@ int main(int argc, char* argv[]) {
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    glutSwapBuffers();
-    glutPostRedisplay();
-  });
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+  }
 
-  glutIdleFunc([](){
-    if (++frames == 100) {
-      frames = 0;
-      int time = glutGet(GLUT_ELAPSED_TIME);
-      float fps = 100.f * 1000.f / (time - startTime);
-      startTime = time;
-
-      web_view->CallJavascript("set_fps", fps);
-    }
-
-    swift::Gui::Update();
-    glutPostRedisplay();
-  });
-
-  glutKeyboardFunc([](unsigned char key, int x, int y){
-    web_view->InjectKeyDown(key, 0, 0);
-    web_view->InjectChar(key);
-
-    if (key == '1') {
-      web_view->Reload();
-    } else if (key == '2') {
-      web_view->ShowDevTools();
-    }
-  });
-
-  glutKeyboardUpFunc([](unsigned char key, int x, int y){
-    web_view->InjectKeyUp(key, 0, 0);
-  });
-
-  glutMouseFunc([](int button, int state, int x, int y){
-    if      (button == 3)        web_view->InjectMouseWheel(0,  10);
-    else if (button == 4)        web_view->InjectMouseWheel(0, -10);
-    else if (state == GLUT_DOWN) web_view->InjectButtonDown((swift::Button)button);
-    else                         web_view->InjectButtonUp((swift::Button)button);
-  });
-
-  glutMotionFunc([](int x, int y){
-    web_view->InjectMouseMove(x, y);
-  });
-
-  glutPassiveMotionFunc([](int x, int y){
-    web_view->InjectMouseMove(x, y);
-  });
-
-  glutCloseFunc([](){
-    DestroyResources();
-    swift::Gui::CleanUp();
-  });
-
-  CreateResources();
-
-  glutMainLoop();
+  swift::Gui::CleanUp();
+  DestroyResources();
 
   return 0;
 }

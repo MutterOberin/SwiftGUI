@@ -28,7 +28,10 @@ public:
 
 WebView::WebView(const std::string& url, int width, int height)
 : client_(new detail::WebViewClient(width, height))
-, devToolsOpen_(false) {
+, devToolsOpen_(false)
+, mouse_x_(0)
+, mouse_y_(0)
+, mouse_modifiers_(0) {
 
   CefWindowInfo info;
   info.width = width;
@@ -69,64 +72,78 @@ void WebView::Reload(bool ignoreCache) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectMouseMove(int x, int y) const {
+void WebView::InjectMouseMove(int x, int y) {
+  mouse_x_ = x;
+  mouse_y_ = y;
+
   CefMouseEvent event;
-  event.modifiers = 0;
-  event.x = x;
-  event.y = y;
+  event.modifiers = mouse_modifiers_;
+  event.x = mouse_x_;
+  event.y = mouse_y_;
 
   client_->GetBrowser()->GetHost()->SendMouseMoveEvent(event, false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectMouseWheel(int direction, int x, int y) const {
+void WebView::InjectMouseWheel(int x, int y) {
   CefMouseEvent event;
-  event.modifiers = 0;
-  event.x = x;
-  event.y = y;
+  event.x = mouse_x_;
+  event.y = mouse_y_;
 
-  client_->GetBrowser()->GetHost()->SendMouseWheelEvent(event, 0, direction);
+  client_->GetBrowser()->GetHost()->SendMouseWheelEvent(event, x, y);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectButtonDown(int button, int x, int y) const {
+void WebView::InjectButtonDown(Button button) {
+
+  if (button == Button::LEFT)        mouse_modifiers_ |= (int)Modifier::LEFT_BUTTON;
+  else if (button == Button::RIGHT)  mouse_modifiers_ |= (int)Modifier::RIGHT_BUTTON;
+  else if (button == Button::MIDDLE) mouse_modifiers_ |= (int)Modifier::MIDDLE_BUTTON;
+
   CefMouseEvent event;
-  event.modifiers = 0;
-  event.x = x;
-  event.y = y;
+  event.modifiers = mouse_modifiers_;
+  event.x = mouse_x_;
+  event.y = mouse_y_;
 
   client_->GetBrowser()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, false, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectButtonUp(int button, int x, int y) const {
+void WebView::InjectButtonUp(Button button) {
+
+  if      (button == Button::LEFT)   mouse_modifiers_ &= ~(int)Modifier::LEFT_BUTTON;
+  else if (button == Button::RIGHT)  mouse_modifiers_ &= ~(int)Modifier::RIGHT_BUTTON;
+  else if (button == Button::MIDDLE) mouse_modifiers_ &= ~(int)Modifier::MIDDLE_BUTTON;
+
   CefMouseEvent event;
-  event.modifiers = 0;
-  event.x = x;
-  event.y = y;
+  event.modifiers = mouse_modifiers_;
+  event.x = mouse_x_;
+  event.y = mouse_y_;
 
   client_->GetBrowser()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, true, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectKeyDown(unsigned int key) const {
+void WebView::InjectKeyDown(int key, int code, int mods) {
   CefKeyEvent event;
-  event.native_key_code = key;
+  event.modifiers = mods;
+  event.native_key_code = code;
   event.unmodified_character = key;
-  event.type = KEYEVENT_KEYDOWN;
+  event.type = KEYEVENT_RAWKEYDOWN;
 
   client_->GetBrowser()->GetHost()->SendKeyEvent(event);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectKeyUp(unsigned int key) const {
+void WebView::InjectKeyUp(int key, int code, int mods) {
   CefKeyEvent event;
-  event.native_key_code = key;
+  event.modifiers = mods;
+  event.native_key_code = code;
   event.unmodified_character = key;
   event.type = KEYEVENT_KEYUP;
 
@@ -135,7 +152,7 @@ void WebView::InjectKeyUp(unsigned int key) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectChar(unsigned int key) const {
+void WebView::InjectChar(unsigned int key) {
   CefKeyEvent event;
   event.character = key;
   event.type = KEYEVENT_CHAR;

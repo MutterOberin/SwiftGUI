@@ -13,6 +13,9 @@ find_package(GLUT)
 find_package(OpenGL)
 find_package(GLEW)
 
+find_package(PkgConfig)
+pkg_search_module(GLFW REQUIRED glfw3)
+
 set(CMAKE_INSTALL_RPATH
     "${CMAKE_INSTALL_PREFIX}/lib"
     "${CEF_LIBRARY_DIR}"

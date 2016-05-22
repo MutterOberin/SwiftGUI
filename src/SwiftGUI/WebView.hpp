@@ -72,19 +72,19 @@ class WebView {
   }
 
 
-  void Resize(int width, int height)                 const;
-  void Reload(bool ignoreCache = false)              const;
+  void Resize(int width, int height) const;
+  void Reload(bool ignoreCache = false) const;
 
-  void InjectMouseMove(int x, int y)                 const;
-  void InjectMouseWheel(int direction, int x, int y) const;
+  void InjectMouseMove(int x, int y);
+  void InjectMouseWheel(int x, int y);
 
-  void InjectButtonDown(int button, int x, int y)    const;
-  void InjectButtonUp(int button, int x, int y)      const;
+  void InjectButtonDown(Button button);
+  void InjectButtonUp(Button button);
 
-  void InjectKeyDown(unsigned int key)              const;
-  void InjectKeyUp(unsigned int key)                const;
+  void InjectKeyDown(int key, int code, int mods);
+  void InjectKeyUp(int key, int code, int mods);
 
-  void InjectChar(unsigned int key)                 const;
+  void InjectChar(unsigned int key);
 
   void ToggleDevTools();
   void ShowDevTools();
@@ -100,6 +100,11 @@ class WebView {
   detail::WebViewClient* client_;
 
   bool devToolsOpen_;
+
+  // input state
+  int mouse_x_;
+  int mouse_y_;
+  int mouse_modifiers_;
 };
 
 }
