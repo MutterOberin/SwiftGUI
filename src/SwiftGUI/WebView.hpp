@@ -29,44 +29,44 @@ class WebView {
   WebView(const std::string& url, int width, int height);
   virtual ~WebView();
 
-  void SetDrawCallback(const DrawCallback& callback);
+  void SetDrawCallback(DrawCallback const& callback);
 
   template<typename ...Args>
   void CallJavascript(std::string const& function, Args&& ... a) const {
     std::vector<std::string> args = {(utils::to_string(a))...};
-    call_javascript_impl(function, args);
+    CallJavascriptImpl(function, args);
   }
 
   void RegisterCallback(std::string const& name, std::function<void()> callback) {
-    register_js_callback_impl(name, [this, callback](std::vector<Any> const& args) {
+    RegisterJSCallbackImpl(name, [this, callback](std::vector<Any> const& args) {
       callback();
     });
   }
 
   template<typename A>
   void RegisterCallback(std::string const& name, std::function<void(A)> callback) {
-    register_js_callback_impl(name, [this, callback](std::vector<Any> const& args) {
+    RegisterJSCallbackImpl(name, [this, callback](std::vector<Any> const& args){
       callback(args[0].cast<A>());
     });
   }
 
   template<typename A, typename B>
   void RegisterCallback(std::string const& name, std::function<void(A, B)> callback) {
-    register_js_callback_impl(name, [this, callback](std::vector<Any> const& args){
+    RegisterJSCallbackImpl(name, [this, callback](std::vector<Any> const& args){
       callback(args[0].cast<A>(), args[1].cast<B>());
     });
   }
 
   template<typename A, typename B, typename C>
   void RegisterCallback(std::string const& name, std::function<void(A, B, C)> callback) {
-    register_js_callback_impl(name, [this, callback](std::vector<Any> const& args){
+    RegisterJSCallbackImpl(name, [this, callback](std::vector<Any> const& args){
       callback(args[0].cast<A>(), args[1].cast<B>(), args[2].cast<C>());
     });
   }
 
   template<typename A, typename B, typename C, typename D>
   void RegisterCallback(std::string const& name, std::function<void(A, B, C, D)> callback) {
-    register_js_callback_impl(name, [this, callback](std::vector<Any> const& args){
+    RegisterJSCallbackImpl(name, [this, callback](std::vector<Any> const& args){
       callback(args[0].cast<A>(), args[1].cast<B>(), args[2].cast<C>(), args[3].cast<D>());
     });
   }
@@ -81,8 +81,10 @@ class WebView {
   void InjectButtonDown(int button, int x, int y)    const;
   void InjectButtonUp(int button, int x, int y)      const;
 
-  void InjectKeyDown(unsigned char key)              const;
-  void InjectKeyUp(unsigned char key)                const;
+  void InjectKeyDown(unsigned int key)              const;
+  void InjectKeyUp(unsigned int key)                const;
+
+  void InjectChar(unsigned int key)                 const;
 
   void ToggleDevTools();
   void ShowDevTools();
@@ -91,12 +93,11 @@ class WebView {
  ///////////////////////////////////////////////////////////////////////////////
  // ---------------------------------------------------------- private interface
  private:
-  void call_javascript_impl(std::string const& function, std::vector<std::string> const& args) const;
+  void CallJavascriptImpl(std::string const& function, std::vector<std::string> const& args) const;
 
-  void register_js_callback_impl(std::string const& name, std::function<void(std::vector<Any> const&)> callback);
+  void RegisterJSCallbackImpl(std::string const& name, std::function<void(std::vector<Any> const&)> callback);
 
-  detail::Browser*          browser_;
-  detail::WebViewClient*    client_;
+  detail::WebViewClient* client_;
 
   bool devToolsOpen_;
 };

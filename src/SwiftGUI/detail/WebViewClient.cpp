@@ -24,12 +24,20 @@ namespace detail {
 
 WebViewClient::WebViewClient(int width, int height)
 : width_(width)
-, height_(height) {}
+, height_(height)
+, last_draw_width_(0)
+, last_draw_height_(0) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebViewClient::SetDrawCallback(const DrawCallback& callback) {
+void WebViewClient::SetDrawCallback(DrawCallback const& callback) {
   callback_ = callback;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+CefRefPtr<CefLifeSpanHandler> WebViewClient::GetLifeSpanHandler() {
+  return this;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -114,6 +122,12 @@ bool WebViewClient::OnConsoleMessage(
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void WebViewClient::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
+  browser_ = browser;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 CefRefPtr<CefResourceHandler> WebViewClient::GetResourceHandler(
   CefRefPtr<CefBrowser> browser,
   CefRefPtr<CefFrame> frame,
@@ -162,6 +176,7 @@ CefRefPtr<CefResourceHandler> WebViewClient::GetResourceHandler(
 void WebViewClient::Resize(int width, int height) {
   width_ = width;
   height_ = height;
+  browser_->GetHost()->WasResized();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -173,22 +188,21 @@ bool WebViewClient::GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebViewClient::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type, const RectList &dirtyRects, const void *buffer, int width, int height) {
+void WebViewClient::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type,
+                            RectList const& dirtyRects, const void *buffer,
+                            int width, int height) {
   if (callback_) {
-    std::vector<Rect> rects(dirtyRects.size());
-    for (int i(0); i<dirtyRects.size(); ++i) {
-      rects[i].x = dirtyRects[i].x;
-      rects[i].y = dirtyRects[i].y;
-      rects[i].width = dirtyRects[i].width;
-      rects[i].height = dirtyRects[i].height;
-    }
-    callback_(width, height, rects, (char*)buffer);
+    bool resized(width != last_draw_width_ || height != last_draw_height_);
+    callback_(0, 0, width, height, resized, (char*)buffer);
+
+    last_draw_width_ = width;
+    last_draw_height_ = height;
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebViewClient::register_js_callback(std::string const& name, std::function<void(std::vector<Any> const&)> callback) {
+void WebViewClient::RegisterJSCallback(std::string const& name, std::function<void(std::vector<Any> const&)> callback) {
   js_callbacks_[name] = callback;
 }
 

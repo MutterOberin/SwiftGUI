@@ -12,41 +12,45 @@
 // includes  -------------------------------------------------------------------
 #include "WebView.hpp"
 
+#include "Logger.hpp"
 #include "detail/WebViewClient.hpp"
-#include "detail/Browser.hpp"
 
 namespace swift {
+
+class DevToolsClient : public CefClient
+{
+public:
+  IMPLEMENT_REFCOUNTING(DevToolsClient);
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 WebView::WebView(const std::string& url, int width, int height)
-: browser_(new detail::Browser())
-, client_(new detail::WebViewClient(width, height))
+: client_(new detail::WebViewClient(width, height))
 , devToolsOpen_(false) {
 
-  CefRefPtr<detail::WebViewClient> browserClient;
   CefWindowInfo info;
-  CefBrowserSettings browserSettings;
+  info.width = width;
+  info.height = height;
 
+  CefBrowserSettings browserSettings;
   std::size_t windowHandle = 0;
   info.SetAsWindowless(windowHandle, true);
   browserSettings.windowless_frame_rate = 60;
 
-  browser_->Get() = CefBrowserHost::CreateBrowserSync(info, client_,
-            url,
-            browserSettings, NULL);
+  CefBrowserHost::CreateBrowserSync(info, client_, url, browserSettings, nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 WebView::~WebView() {
-  delete browser_;
   delete client_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::SetDrawCallback(const DrawCallback& callback) {
+void WebView::SetDrawCallback(DrawCallback const& callback) {
   client_->SetDrawCallback(callback);
 }
 
@@ -54,14 +58,13 @@ void WebView::SetDrawCallback(const DrawCallback& callback) {
 
 void WebView::Resize(int width, int height) const {
   client_->Resize(width, height);
-  browser_->Get()->GetHost()->WasResized();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void WebView::Reload(bool ignoreCache) const {
-  if (ignoreCache) browser_->Get()->ReloadIgnoreCache();
-  else             browser_->Get()->Reload();
+  if (ignoreCache) client_->GetBrowser()->ReloadIgnoreCache();
+  else             client_->GetBrowser()->Reload();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -72,7 +75,7 @@ void WebView::InjectMouseMove(int x, int y) const {
   event.x = x;
   event.y = y;
 
-  browser_->Get()->GetHost()->SendMouseMoveEvent(event, false);
+  client_->GetBrowser()->GetHost()->SendMouseMoveEvent(event, false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,7 +86,7 @@ void WebView::InjectMouseWheel(int direction, int x, int y) const {
   event.x = x;
   event.y = y;
 
-  browser_->Get()->GetHost()->SendMouseWheelEvent(event, 0, direction);
+  client_->GetBrowser()->GetHost()->SendMouseWheelEvent(event, 0, direction);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +97,7 @@ void WebView::InjectButtonDown(int button, int x, int y) const {
   event.x = x;
   event.y = y;
 
-  browser_->Get()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, false, 1);
+  client_->GetBrowser()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, false, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,46 +108,58 @@ void WebView::InjectButtonUp(int button, int x, int y) const {
   event.x = x;
   event.y = y;
 
-  browser_->Get()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, true, 1);
+  client_->GetBrowser()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, true, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectKeyDown(unsigned char key) const {
+void WebView::InjectKeyDown(unsigned int key) const {
+  CefKeyEvent event;
+  event.native_key_code = key;
+  event.unmodified_character = key;
+  event.type = KEYEVENT_KEYDOWN;
+
+  client_->GetBrowser()->GetHost()->SendKeyEvent(event);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void WebView::InjectKeyUp(unsigned int key) const {
+  CefKeyEvent event;
+  event.native_key_code = key;
+  event.unmodified_character = key;
+  event.type = KEYEVENT_KEYUP;
+
+  client_->GetBrowser()->GetHost()->SendKeyEvent(event);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void WebView::InjectChar(unsigned int key) const {
   CefKeyEvent event;
   event.character = key;
   event.type = KEYEVENT_CHAR;
 
-  browser_->Get()->GetHost()->SendKeyEvent(event);
+  client_->GetBrowser()->GetHost()->SendKeyEvent(event);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectKeyUp(unsigned char key) const {
-  CefKeyEvent event;
-  event.character = key;
-  event.type = KEYEVENT_KEYUP;
-
-  browser_->Get()->GetHost()->SendKeyEvent(event);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void WebView::call_javascript_impl(std::string const& function, std::vector<std::string> const& args) const {
+void WebView::CallJavascriptImpl(std::string const& function, std::vector<std::string> const& args) const {
   std::string call(function + "( ");
   for (auto& s: args) {
     call += s + ",";
   }
   call.back() = ')';
 
-  CefRefPtr<CefFrame> frame = browser_->Get()->GetMainFrame();
+  CefRefPtr<CefFrame> frame = client_->GetBrowser()->GetMainFrame();
   frame->ExecuteJavaScript(call, frame->GetURL(), 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::register_js_callback_impl(std::string const& name, std::function<void(std::vector<Any> const&)> callback) {
-  client_->register_js_callback(name, callback);
+void WebView::RegisterJSCallbackImpl(std::string const& name, std::function<void(std::vector<Any> const&)> callback) {
+  client_->RegisterJSCallback(name, callback);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -158,20 +173,24 @@ void WebView::ToggleDevTools() {
 
 void WebView::ShowDevTools() {
   CefWindowInfo windowInfo;
+  windowInfo.height = 500;
+  windowInfo.width = 500;
+  windowInfo.parent_window = 0;
+
   CefRefPtr<CefClient> client;
   CefBrowserSettings settings;
 
   // MainContext::Get()->GetRootWindowManager()->CreateRootWindowAsPopup(
   //     !is_devtools, is_osr(), popupFeatures, windowInfo, client, settings);
 
-  browser_->Get()->GetHost()->ShowDevTools(windowInfo, browser_->Get()->GetHost()->GetClient(), settings, CefPoint());
+  client_->GetBrowser()->GetHost()->ShowDevTools(windowInfo, new DevToolsClient(), settings, CefPoint());
   devToolsOpen_ = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void WebView::CloseDevTools() {
-  browser_->Get()->GetHost()->CloseDevTools();
+  client_->GetBrowser()->GetHost()->CloseDevTools();
   devToolsOpen_ = false;
 }
 

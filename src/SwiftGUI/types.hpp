@@ -18,14 +18,7 @@
 
 namespace swift {
 
-struct Rect {
-  int x;
-  int y;
-  int width;
-  int height;
-};
-
-typedef std::function<void(int, int, const std::vector<Rect>&, const char*)> DrawCallback;
+typedef std::function<void(int, int, int, int, bool, const char*)> DrawCallback;
 
 namespace detail {
 

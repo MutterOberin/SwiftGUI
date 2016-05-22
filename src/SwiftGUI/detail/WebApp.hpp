@@ -9,8 +9,8 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef SWIFT_DETAIL_APP_HPP
-#define SWIFT_DETAIL_APP_HPP
+#ifndef SWIFT_DETAIL_WEB_APP_HPP
+#define SWIFT_DETAIL_WEB_APP_HPP
 
 // includes  -------------------------------------------------------------------
 #include <include/cef_app.h>
@@ -19,32 +19,49 @@
 namespace swift {
 namespace detail {
 
-class App : public CefApp,
-            public CefRenderProcessHandler {
+class WebApp : public CefApp,
+               public CefRenderProcessHandler,
+               public CefBrowserProcessHandler {
 
  ///////////////////////////////////////////////////////////////////////////////
  // ----------------------------------------------------------- public interface
  public:
 
-  virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() override {
-    return this;
-  }
+  // If hardware_accelerated is set to true, webgl will be available, but the
+  // overall performance is likey to be worse.
+  WebApp(bool hardware_accelerated);
 
-  virtual void OnBeforeCommandLineProcessing(
-                                const CefString& process_type,
-                                CefRefPtr<CefCommandLine> command_line) override;
+  // CefApp interface ----------------------------------------------------------
 
+  // Returns this.
+  virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() override;
+
+  // This is called just before the command line arguments are parsed by CEF. We
+  // use this opportunity to add some configuration parameters.
+  virtual void OnBeforeCommandLineProcessing(CefString const& process_type,
+                               CefRefPtr<CefCommandLine> command_line) override;
+
+  // CefRenderProcessHandler interface -----------------------------------------
+
+  // This is called for each new context. We use this callback to add the
+  // call_native method to the window object.
   virtual void OnContextCreated(CefRefPtr<CefBrowser> browser,
-                                CefRefPtr<CefFrame> frame,
-                                CefRefPtr<CefV8Context> context) override ;
+                               CefRefPtr<CefFrame> frame,
+                               CefRefPtr<CefV8Context> context) override;
+
+  // CefBrowserProcessHandler interface -----------------------------------------
+
+  virtual void OnContextInitialized() override;
 
  ///////////////////////////////////////////////////////////////////////////////
  // ---------------------------------------------------------- private interface
  private:
-  IMPLEMENT_REFCOUNTING(App);
+  IMPLEMENT_REFCOUNTING(WebApp);
+
+  bool hardware_accelerated_;
 };
 
 }
 }
 
-#endif // SWIFT_DETAIL_APP_HPP
+#endif // SWIFT_DETAIL_WEB_APP_HPP

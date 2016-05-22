@@ -13,7 +13,7 @@
 #include "SwiftGUI.hpp"
 
 #include "Logger.hpp"
-#include "detail/App.hpp"
+#include "detail/WebApp.hpp"
 
 #include <include/cef_app.h>
 #include <stdlib.h>
@@ -25,7 +25,7 @@ namespace swift {
 
 void Gui::Init(int argc, char *argv[]) {
 
-  CefRefPtr<detail::App> app(new detail::App());
+  CefRefPtr<detail::WebApp> app(new detail::WebApp(false));
 
   CefMainArgs args(argc, argv);
   int result = CefExecuteProcess(args, app.get(), 0);
@@ -34,7 +34,9 @@ void Gui::Init(int argc, char *argv[]) {
   }
 
   CefSettings settings;
+  // settings.windowless_rendering_enabled = true;
   settings.remote_debugging_port = 8999;
+
   if (!CefInitialize(args, settings, app, 0)) {
     SWIFT_ERROR << "Failed to initialize CEF. Gui will not work at all"
                 << std::endl;

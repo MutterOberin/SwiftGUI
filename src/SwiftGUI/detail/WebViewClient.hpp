@@ -26,6 +26,7 @@ namespace swift {
 namespace detail {
 
 class WebViewClient : public CefClient,
+                      public CefLifeSpanHandler,
                       public CefRenderHandler,
                       public CefRequestHandler,
                       public CefDisplayHandler {
@@ -33,38 +34,58 @@ class WebViewClient : public CefClient,
  ///////////////////////////////////////////////////////////////////////////////
  // ----------------------------------------------------------- public interface
  public:
+
+  // Set the initial size of the internal render target.
   WebViewClient(int width, int height);
 
-  void SetDrawCallback(const DrawCallback& callback);
+  void SetDrawCallback(DrawCallback const& callback);
 
-  virtual CefRefPtr<CefDisplayHandler> GetDisplayHandler() override;
-  virtual CefRefPtr<CefRenderHandler>  GetRenderHandler() override;
-  virtual CefRefPtr<CefRequestHandler> GetRequestHandler() override;
+  void Resize(int width, int height);
+
+  bool GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect) override;
+
+  void RegisterJSCallback(std::string const& name,
+    std::function<void(std::vector<Any> const&)> callback);
+
+  CefRefPtr<CefBrowser> const& GetBrowser() const {
+    return browser_;
+  }
+
+  // CefClient interface -------------------------------------------------------
+
+  virtual CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override;
+  virtual CefRefPtr<CefDisplayHandler>  GetDisplayHandler() override;
+  virtual CefRefPtr<CefRenderHandler>   GetRenderHandler() override;
+  virtual CefRefPtr<CefRequestHandler>  GetRequestHandler() override;
+
 
   virtual bool OnProcessMessageReceived(
     CefRefPtr<CefBrowser> browser,
     CefProcessId source_process,
     CefRefPtr<CefProcessMessage> message) override;
 
+  // CefLifeSpanHandler interface ----------------------------------------------
+
+  virtual void OnAfterCreated(CefRefPtr<CefBrowser> browser) override;
+
+  // CefDisplayHandler interface -----------------------------------------------
+
   virtual bool OnConsoleMessage(
       CefRefPtr<CefBrowser> browser,
       CefString const& message, CefString const& source, int line) override;
 
-  virtual CefRefPtr<CefResourceHandler> GetResourceHandler(
-    CefRefPtr<CefBrowser> browser,
-    CefRefPtr<CefFrame> frame,
-    CefRefPtr<CefRequest> request) override;
-
-  void Resize(int width, int height);
-
-  bool GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect) override;
+  // CefRenderHandler interface ------------------------------------------------
 
   void OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type,
     const RectList &dirtyRects, const void *buffer,
     int width, int height) override;
 
-  void register_js_callback(std::string const& name,
-    std::function<void(std::vector<Any> const&)> callback);
+  // CefRequestHandler interface -----------------------------------------------
+
+  virtual CefRefPtr<CefResourceHandler> GetResourceHandler(
+    CefRefPtr<CefBrowser> browser,
+    CefRefPtr<CefFrame> frame,
+    CefRefPtr<CefRequest> request) override;
 
  ///////////////////////////////////////////////////////////////////////////////
  // ---------------------------------------------------------- private interface
@@ -72,10 +93,16 @@ class WebViewClient : public CefClient,
 
   IMPLEMENT_REFCOUNTING(WebViewClient);
 
+  CefRefPtr<CefBrowser> browser_;
+
   int width_;
   int height_;
 
+  int last_draw_width_;
+  int last_draw_height_;
+
   DrawCallback callback_;
+
   std::unordered_map<std::string, std::function<void(std::vector<Any> const&)>> js_callbacks_;
 };
 

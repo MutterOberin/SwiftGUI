@@ -144,8 +144,14 @@ int main(int argc, char* argv[]) {
   web_view = new swift::WebView("file://../share/gui.html", WIDTH, HEIGHT);
   // web_view = new swift::WebView("https://www.google.de/webhp?hl=de", WIDTH, HEIGHT);
 
-  web_view->SetDrawCallback([](int width, int height, const std::vector<swift::Rect>& dirtyRects, const char* data) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+  web_view->SetDrawCallback([](int x, int y, int width, int height,
+                               bool resized, const char* data) {
+    // std::cout << "-- " << x << " " << y << " " << width << " " << height << std::endl;
+    if (resized) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+    } else {
+      glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, GL_BGRA, GL_UNSIGNED_BYTE, data);
+    }
   });
 
   web_view->RegisterCallback("quit", ([]() {
@@ -220,6 +226,7 @@ int main(int argc, char* argv[]) {
 
   glutKeyboardFunc([](unsigned char key, int x, int y){
     web_view->InjectKeyDown(key);
+    web_view->InjectChar(key);
 
     if (key == '1') {
       web_view->Reload();
