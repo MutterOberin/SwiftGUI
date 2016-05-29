@@ -54,7 +54,13 @@ WebView::~WebView() {
 ////////////////////////////////////////////////////////////////////////////////
 
 void WebView::SetDrawCallback(DrawCallback const& callback) {
-  client_->SetDrawCallback(callback);
+  client_->SetDrawCallback(DrawSettings(), callback);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void WebView::SetDrawCallback(DrawSettings const& settings, DrawCallback const& callback) {
+  client_->SetDrawCallback(settings, callback);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

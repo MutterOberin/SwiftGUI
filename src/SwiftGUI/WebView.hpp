@@ -31,6 +31,7 @@ class WebView {
   virtual ~WebView();
 
   void SetDrawCallback(DrawCallback const& callback);
+  void SetDrawCallback(DrawSettings const& settings, DrawCallback const& callback);
 
   template<typename ...Args>
   void CallJavascript(std::string const& function, Args&& ... a) const {
@@ -71,7 +72,6 @@ class WebView {
       callback(args[0].cast<A>(), args[1].cast<B>(), args[2].cast<C>(), args[3].cast<D>());
     });
   }
-
 
   void Resize(int width, int height) const;
   void Reload(bool ignoreCache = false) const;

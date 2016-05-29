@@ -13,9 +13,11 @@
 #include "WebViewClient.hpp"
 
 #include "../Logger.hpp"
+#include "ScopedTimer.hpp"
 
 #include <iostream>
 #include <fstream>
+#include <cstring>
 
 namespace swift {
 namespace detail {
@@ -30,7 +32,8 @@ WebViewClient::WebViewClient(int width, int height)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebViewClient::SetDrawCallback(DrawCallback const& callback) {
+void WebViewClient::SetDrawCallback(DrawSettings const& settings, DrawCallback const& callback) {
+  settings_ = settings;
   callback_ = callback;
 }
 
@@ -189,14 +192,104 @@ bool WebViewClient::GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void WebViewClient::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type,
-                            RectList const& dirtyRects, const void *buffer,
+                            RectList const& dirtyRects, const void *b,
                             int width, int height) {
-  if (callback_) {
-    bool resized(width != last_draw_width_ || height != last_draw_height_);
-    callback_(0, 0, width, height, resized, (char*)buffer);
 
+  if (callback_) {
+
+    detail::ScopedTimer timer("DrawEvent");
+    DrawEvent event;
+
+    event.resized_ = width != last_draw_width_ || height != last_draw_height_;
     last_draw_width_ = width;
     last_draw_height_ = height;
+
+    if (event.resized_ || settings_.full_redraws_) {
+      event.x_       = 0;
+      event.y_       = 0;
+      event.width_   = width;
+      event.height_  = height;
+      event.data_    = (char*)b;
+
+      if(settings_.flip_y_ || settings_.convert_to_rgba_) {
+        std::vector<char> data(width*height*4);
+        char* buffer = (char*)b;
+
+        if(settings_.convert_to_rgba_ && settings_.flip_y_) {
+
+          for(int y(0);y<height;++y) {
+            for(int x(0);x<width;++x) {
+              data[(height-y-1)*width*4+x*4+0] = buffer[y*width*4+x*4+2];
+              data[(height-y-1)*width*4+x*4+1] = buffer[y*width*4+x*4+1];
+              data[(height-y-1)*width*4+x*4+2] = buffer[y*width*4+x*4+0];
+              data[(height-y-1)*width*4+x*4+3] = buffer[y*width*4+x*4+3];
+            }
+          }
+
+        } else if (settings_.convert_to_rgba_) {
+
+          for(int y(0);y<height;++y) {
+            for(int x(0);x<width;++x) {
+              data[y*width*4+x*4+0] = buffer[y*width*4+x*4+2];
+              data[y*width*4+x*4+1] = buffer[y*width*4+x*4+1];
+              data[y*width*4+x*4+2] = buffer[y*width*4+x*4+0];
+              data[y*width*4+x*4+3] = buffer[y*width*4+x*4+3];
+            }
+          }
+
+        } else {
+          for(int y(0);y<height;++y) {
+            std::memcpy(&data[(height-y-1)*width*4], buffer + y*width*4, width*4);
+          }
+        }
+
+        event.data_ = data.data();
+        callback_(event);
+      } else {
+        callback_(event);
+      }
+
+    } else {
+      for(auto const& rect: dirtyRects) {
+        event.x_       = rect.x;
+        event.y_       = rect.y;
+        event.width_   = rect.width;
+        event.height_  = rect.height;
+        std::vector<char> data(rect.width*rect.height*4);
+        char* buffer = (char*)b;
+
+        if(settings_.convert_to_rgba_ && settings_.flip_y_) {
+
+          // for(int y(0);y<height;++y) {
+          //   for(int x(0);x<width;++x) {
+          //     data[(height-y-1)*width*4+x*4+0] = buffer[y*width*4+x*4+2];
+          //     data[(height-y-1)*width*4+x*4+1] = buffer[y*width*4+x*4+1];
+          //     data[(height-y-1)*width*4+x*4+2] = buffer[y*width*4+x*4+0];
+          //     data[(height-y-1)*width*4+x*4+3] = buffer[y*width*4+x*4+3];
+          //   }
+          // }
+
+        } else if (settings_.convert_to_rgba_) {
+
+          // for(int y(0);y<height;++y) {
+          //   for(int x(0);x<width;++x) {
+          //     data[y*width*4+x*4+0] = buffer[y*width*4+x*4+2];
+          //     data[y*width*4+x*4+1] = buffer[y*width*4+x*4+1];
+          //     data[y*width*4+x*4+2] = buffer[y*width*4+x*4+0];
+          //     data[y*width*4+x*4+3] = buffer[y*width*4+x*4+3];
+          //   }
+          // }
+
+        } else {
+          for(int y(0);y<rect.height;++y) {
+            std::memcpy(&data[y*rect.width*4], buffer + ((y+rect.y)*width + rect.x)*4, rect.width*4);
+          }
+        }
+
+        event.data_ = data.data();
+        callback_(event);
+      }
+    }
   }
 }
 

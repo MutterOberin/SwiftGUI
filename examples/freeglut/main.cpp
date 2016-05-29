@@ -190,13 +190,13 @@ int main(int argc, char* argv[]) {
   web_view = new swift::WebView("file://../share/gui.html", WIDTH, HEIGHT);
   // web_view = new swift::WebView("https://www.google.de/webhp?hl=de", WIDTH, HEIGHT);
 
-  web_view->SetDrawCallback([](int x, int y, int width, int height,
-                               bool resized, const char* data) {
+  swift::DrawSettings settings;
+  web_view->SetDrawCallback(settings, [](swift::DrawEvent const& event) {
     // std::cout << "-- " << x << " " << y << " " << width << " " << height << std::endl;
-    if (resized) {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+    if (event.resized_) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, event.width_, event.height_, 0, GL_BGRA, GL_UNSIGNED_BYTE, event.data_);
     } else {
-      glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, GL_BGRA, GL_UNSIGNED_BYTE, data);
+      glTexSubImage2D(GL_TEXTURE_2D, 0, event.x_, event.y_, event.width_, event.height_, GL_BGRA, GL_UNSIGNED_BYTE, event.data_);
     }
   });
 

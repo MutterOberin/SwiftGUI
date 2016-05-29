@@ -53,7 +53,22 @@ typedef unsigned char uint8;
 
 // function types --------------------------------------------------------------
 
-typedef std::function<void(int, int, int, int, bool, const char*)> DrawCallback;
+struct DrawEvent {
+  int x_;
+  int y_;
+  int width_;
+  int height_;
+  bool resized_;
+  const char* data_;
+};
+
+struct DrawSettings {
+  bool convert_to_rgba_ = false;
+  bool flip_y_          = false;
+  bool full_redraws_    = false;
+};
+
+typedef std::function<void(DrawEvent const&)> DrawCallback;
 
 // input enum types ------------------------------------------------------------
 

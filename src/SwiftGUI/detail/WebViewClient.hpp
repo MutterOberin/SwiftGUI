@@ -38,7 +38,7 @@ class WebViewClient : public CefClient,
   // Set the initial size of the internal render target.
   WebViewClient(int width, int height);
 
-  void SetDrawCallback(DrawCallback const& callback);
+  void SetDrawCallback(DrawSettings const& settings, DrawCallback const& callback);
 
   void Resize(int width, int height);
 
@@ -101,6 +101,7 @@ class WebViewClient : public CefClient,
   int last_draw_width_;
   int last_draw_height_;
 
+  DrawSettings settings_;
   DrawCallback callback_;
 
   std::unordered_map<std::string, std::function<void(std::vector<Any> const&)>> js_callbacks_;

@@ -44,9 +44,8 @@ int main(int argc, char *argv[]) {
 
   swift::WebView webView("https://www.youtube.com/watch?v=ghV21DlDOug", 960, 640);
 
-  webView.SetDrawCallback([](int x, int y, int width, int height,
-                             bool resized, const char* data){
-    WriteTga("test.tga", data, width, height);
+  webView.SetDrawCallback([](swift::DrawEvent const& event){
+    WriteTga("test.tga", event.data_, event.width_, event.height_);
   });
 
   while (true) {
