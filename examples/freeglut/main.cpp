@@ -75,6 +75,52 @@ const std::string F_SOURCE = R"(
   }
 )";
 
+struct GlutKeyEvent: public swift::KeyEvent {
+  GlutKeyEvent(unsigned char key, int mods, swift::KeyEvent::Type type) {
+    type_         = type;
+    character_    = key;
+    key_          = (swift::Key)key;
+
+    SetMods(mods);
+  }
+
+  GlutKeyEvent(int special_key, int mods, swift::KeyEvent::Type type) {
+    type_ = type;
+
+    switch(special_key) {
+      case GLUT_KEY_F1:         key_ = swift::Key::F1;        break;
+      case GLUT_KEY_F2:         key_ = swift::Key::F2;        break;
+      case GLUT_KEY_F3:         key_ = swift::Key::F3;        break;
+      case GLUT_KEY_F4:         key_ = swift::Key::F4;        break;
+      case GLUT_KEY_F5:         key_ = swift::Key::F5;        break;
+      case GLUT_KEY_F6:         key_ = swift::Key::F6;        break;
+      case GLUT_KEY_F7:         key_ = swift::Key::F7;        break;
+      case GLUT_KEY_F8:         key_ = swift::Key::F8;        break;
+      case GLUT_KEY_F9:         key_ = swift::Key::F9;        break;
+      case GLUT_KEY_F10:        key_ = swift::Key::F10;       break;
+      case GLUT_KEY_F11:        key_ = swift::Key::F11;       break;
+      case GLUT_KEY_F12:        key_ = swift::Key::F12;       break;
+      case GLUT_KEY_LEFT:       key_ = swift::Key::LEFT;      break;
+      case GLUT_KEY_UP:         key_ = swift::Key::UP;        break;
+      case GLUT_KEY_RIGHT:      key_ = swift::Key::RIGHT;     break;
+      case GLUT_KEY_DOWN:       key_ = swift::Key::DOWN;      break;
+      case GLUT_KEY_PAGE_UP:    key_ = swift::Key::PAGE_UP;   break;
+      case GLUT_KEY_PAGE_DOWN:  key_ = swift::Key::PAGE_DOWN; break;
+      case GLUT_KEY_HOME:       key_ = swift::Key::HOME;      break;
+      case GLUT_KEY_END:        key_ = swift::Key::END;       break;
+      case GLUT_KEY_INSERT :    key_ = swift::Key::INSERT;    break;
+    }
+
+    SetMods(mods);
+  }
+
+  void SetMods(int mods) {
+    if (mods & GLUT_ACTIVE_SHIFT) modifiers_ |= (int)swift::Modifier::SHIFT;
+    if (mods & GLUT_ACTIVE_CTRL)  modifiers_ |= (int)swift::Modifier::CONTROL;
+    if (mods & GLUT_ACTIVE_ALT)   modifiers_ |= (int)swift::Modifier::ALT;
+  }
+};
+
 void CreateResources() {
 
   // VBO -----------------------------------------------------------------------
@@ -225,33 +271,56 @@ int main(int argc, char* argv[]) {
   });
 
   glutKeyboardFunc([](unsigned char key, int x, int y){
-    web_view->InjectKeyDown(key, 0, 0);
-    web_view->InjectChar(key);
-
-    if (key == '1') {
-      web_view->Reload();
-    } else if (key == '2') {
-      web_view->ShowDevTools();
-    }
+    int mods = glutGetModifiers();
+    web_view->InjectKeyEvent(GlutKeyEvent(key, mods, swift::KeyEvent::Type::PRESS));
+    web_view->InjectKeyEvent(GlutKeyEvent(key, mods, swift::KeyEvent::Type::CHARACTER));
   });
 
-  glutKeyboardUpFunc([](unsigned char key, int x, int y){
-    web_view->InjectKeyUp(key, 0, 0);
+  glutKeyboardUpFunc([](unsigned char key, int x, int y) {
+    int mods = glutGetModifiers();
+    web_view->InjectKeyEvent(GlutKeyEvent(key, mods, swift::KeyEvent::Type::RELEASE));
+  });
+
+  glutSpecialFunc([](int special_key, int x, int y){
+    int mods = glutGetModifiers();
+    web_view->InjectKeyEvent(GlutKeyEvent(special_key, mods, swift::KeyEvent::Type::PRESS));
+  });
+
+  glutSpecialUpFunc([](int special_key, int x, int y){
+    int mods = glutGetModifiers();
+    web_view->InjectKeyEvent(GlutKeyEvent(special_key, mods, swift::KeyEvent::Type::RELEASE));
   });
 
   glutMouseFunc([](int button, int state, int x, int y){
-    if      (button == 3)        web_view->InjectMouseWheel(0,  10);
-    else if (button == 4)        web_view->InjectMouseWheel(0, -10);
-    else if (state == GLUT_DOWN) web_view->InjectButtonDown((swift::Button)button);
-    else                         web_view->InjectButtonUp((swift::Button)button);
+    swift::MouseEvent event;
+    if (button == 3) {
+      event.y_ = 10;
+      event.type_ = swift::MouseEvent::Type::SCROLL;
+    } else if (button == 4) {
+      event.y_ = -10;
+      event.type_ = swift::MouseEvent::Type::SCROLL;
+    } else {
+      event.button_ = (swift::Button)button;
+      if (state == GLUT_DOWN) event.type_ = swift::MouseEvent::Type::PRESS;
+      else                    event.type_ = swift::MouseEvent::Type::RELEASE;
+    }
+    web_view->InjectMouseEvent(event);
   });
 
   glutMotionFunc([](int x, int y){
-    web_view->InjectMouseMove(x, y);
+    swift::MouseEvent event;
+    event.type_ = swift::MouseEvent::Type::MOVE;
+    event.x_ = x;
+    event.y_ = y;
+    web_view->InjectMouseEvent(event);
   });
 
   glutPassiveMotionFunc([](int x, int y){
-    web_view->InjectMouseMove(x, y);
+    swift::MouseEvent event;
+    event.type_ = swift::MouseEvent::Type::MOVE;
+    event.x_ = x;
+    event.y_ = y;
+    web_view->InjectMouseEvent(event);
   });
 
   glutCloseFunc([](){

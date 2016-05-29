@@ -77,23 +77,105 @@ const std::string F_SOURCE = R"(
   }
 )";
 
-int ToSwiftMods(int glfw_mods) {
-  int mods = 0;
+struct GlfwKeyEvent: public swift::KeyEvent {
+  GlfwKeyEvent(int key, int scancode, int action, int mods) {
 
-  if (glfw_mods & GLFW_MOD_SHIFT)   mods |= (int)swift::Modifier::SHIFT;
-  if (glfw_mods & GLFW_MOD_CONTROL) mods |= (int)swift::Modifier::CONTROL;
-  if (glfw_mods & GLFW_MOD_ALT)     mods |= (int)swift::Modifier::ALT;
-  if (glfw_mods & GLFW_MOD_SUPER)   mods |= (int)swift::Modifier::COMMAND;
+    if (action == GLFW_RELEASE) type_ = swift::KeyEvent::Type::RELEASE;
+    else                        type_ = swift::KeyEvent::Type::PRESS;
 
-  return mods;
-}
+    switch(key) {
+      case GLFW_KEY_SPACE:          key_ = swift::Key::SPACE;         break;
+      case GLFW_KEY_A:              key_ = swift::Key::KEY_A;         break;
+      case GLFW_KEY_B:              key_ = swift::Key::KEY_B;         break;
+      case GLFW_KEY_C:              key_ = swift::Key::KEY_C;         break;
+      case GLFW_KEY_D:              key_ = swift::Key::KEY_D;         break;
+      case GLFW_KEY_E:              key_ = swift::Key::KEY_E;         break;
+      case GLFW_KEY_F:              key_ = swift::Key::KEY_F;         break;
+      case GLFW_KEY_G:              key_ = swift::Key::KEY_G;         break;
+      case GLFW_KEY_H:              key_ = swift::Key::KEY_H;         break;
+      case GLFW_KEY_I:              key_ = swift::Key::KEY_I;         break;
+      case GLFW_KEY_J:              key_ = swift::Key::KEY_J;         break;
+      case GLFW_KEY_K:              key_ = swift::Key::KEY_K;         break;
+      case GLFW_KEY_L:              key_ = swift::Key::KEY_L;         break;
+      case GLFW_KEY_M:              key_ = swift::Key::KEY_M;         break;
+      case GLFW_KEY_N:              key_ = swift::Key::KEY_N;         break;
+      case GLFW_KEY_O:              key_ = swift::Key::KEY_O;         break;
+      case GLFW_KEY_P:              key_ = swift::Key::KEY_P;         break;
+      case GLFW_KEY_Q:              key_ = swift::Key::KEY_Q;         break;
+      case GLFW_KEY_R:              key_ = swift::Key::KEY_R;         break;
+      case GLFW_KEY_S:              key_ = swift::Key::KEY_S;         break;
+      case GLFW_KEY_T:              key_ = swift::Key::KEY_T;         break;
+      case GLFW_KEY_U:              key_ = swift::Key::KEY_U;         break;
+      case GLFW_KEY_V:              key_ = swift::Key::KEY_V;         break;
+      case GLFW_KEY_W:              key_ = swift::Key::KEY_W;         break;
+      case GLFW_KEY_X:              key_ = swift::Key::KEY_X;         break;
+      case GLFW_KEY_Y:              key_ = swift::Key::KEY_Y;         break;
+      case GLFW_KEY_Z:              key_ = swift::Key::KEY_Z;         break;
+      case GLFW_KEY_ESCAPE:         key_ = swift::Key::ESCAPE;        break;
+      case GLFW_KEY_ENTER:          key_ = swift::Key::RETURN;        break;
+      case GLFW_KEY_TAB:            key_ = swift::Key::TAB;           break;
+      case GLFW_KEY_BACKSPACE:      key_ = swift::Key::BACKSPACE;     break;
+      case GLFW_KEY_INSERT:         key_ = swift::Key::INSERT;        break;
+      case GLFW_KEY_DELETE:         key_ = swift::Key::DELETE;        break;
+      case GLFW_KEY_RIGHT:          key_ = swift::Key::RIGHT;         break;
+      case GLFW_KEY_LEFT:           key_ = swift::Key::LEFT;          break;
+      case GLFW_KEY_DOWN:           key_ = swift::Key::DOWN;          break;
+      case GLFW_KEY_UP:             key_ = swift::Key::UP;            break;
+      case GLFW_KEY_PAGE_UP:        key_ = swift::Key::PAGE_UP;       break;
+      case GLFW_KEY_PAGE_DOWN:      key_ = swift::Key::PAGE_DOWN;     break;
+      case GLFW_KEY_HOME:           key_ = swift::Key::HOME;          break;
+      case GLFW_KEY_END:            key_ = swift::Key::END;           break;
+      case GLFW_KEY_CAPS_LOCK:      key_ = swift::Key::CAPS_LOCK;     break;
+      case GLFW_KEY_LEFT_SHIFT:     key_ = swift::Key::LEFT_SHIFT;    break;
+      case GLFW_KEY_LEFT_CONTROL:   key_ = swift::Key::LEFT_CONTROL;  break;
+      case GLFW_KEY_LEFT_ALT:       key_ = swift::Key::LEFT_ALT;      break;
+      case GLFW_KEY_LEFT_SUPER:     key_ = swift::Key::LEFT_SUPER;    break;
+      case GLFW_KEY_RIGHT_SHIFT:    key_ = swift::Key::RIGHT_SHIFT;   break;
+      case GLFW_KEY_RIGHT_CONTROL:  key_ = swift::Key::RIGHT_CONTROL; break;
+      case GLFW_KEY_RIGHT_SUPER:    key_ = swift::Key::RIGHT_SUPER;   break;
+      default:                      key_ = swift::Key::UNKNOWN;       break;
+    }
 
-swift::Button ToSwiftButton(int glfw_button) {
-  if (glfw_button == GLFW_MOUSE_BUTTON_LEFT)   return swift::Button::LEFT;
-  if (glfw_button == GLFW_MOUSE_BUTTON_RIGHT)  return swift::Button::RIGHT;
-  if (glfw_button == GLFW_MOUSE_BUTTON_MIDDLE) return swift::Button::MIDDLE;
-  return (swift::Button)glfw_button;
-}
+    SetMods(mods);
+  }
+
+  GlfwKeyEvent(unsigned int key, int mods) {
+    type_ = swift::KeyEvent::Type::CHARACTER;
+    character_ = key;
+    SetMods(mods);
+  }
+
+  void SetMods(int mods) {
+    if (mods & GLFW_MOD_SHIFT)   modifiers_ |= (int)swift::Modifier::SHIFT;
+    if (mods & GLFW_MOD_CONTROL) modifiers_ |= (int)swift::Modifier::CONTROL;
+    if (mods & GLFW_MOD_ALT)     modifiers_ |= (int)swift::Modifier::ALT;
+    if (mods & GLFW_MOD_SUPER)   modifiers_ |= (int)swift::Modifier::COMMAND;
+  }
+};
+
+struct GlfwMouseEvent: public swift::MouseEvent {
+  GlfwMouseEvent(double x, double y) {
+    type_ = swift::MouseEvent::Type::MOVE;
+    x_ = x;
+    y_ = y;
+  }
+
+  GlfwMouseEvent(double scroll_amount) {
+    type_ = swift::MouseEvent::Type::SCROLL;
+    y_ = scroll_amount;
+  }
+
+  GlfwMouseEvent(int button, int action) {
+    if      (button == GLFW_MOUSE_BUTTON_LEFT)   button_ = swift::Button::LEFT;
+    else if (button == GLFW_MOUSE_BUTTON_RIGHT)  button_ = swift::Button::RIGHT;
+    else if (button == GLFW_MOUSE_BUTTON_MIDDLE) button_ = swift::Button::MIDDLE;
+    else                                         button_ = (swift::Button)button;
+
+    if      (action == GLFW_PRESS)   type_ = swift::MouseEvent::Type::PRESS;
+    else if (action == GLFW_RELEASE) type_ = swift::MouseEvent::Type::RELEASE;
+    else std::cout << "huhuhuhu" << std::endl;
+  }
+};
 
 void CreateResources() {
 
@@ -213,37 +295,23 @@ int main(int argc, char* argv[]) {
   });
 
   glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS) {
-      web_view->InjectKeyDown(key, scancode, ToSwiftMods(mods));
-
-      if (key == '1') {
-        web_view->Reload();
-      } else if (key == '2') {
-        web_view->ShowDevTools();
-      }
-    } else if (action == GLFW_RELEASE) {
-      web_view->InjectKeyUp(key, scancode, ToSwiftMods(mods));
-    }
+    web_view->InjectKeyEvent(GlfwKeyEvent(key, scancode, action, mods));
   });
 
-  glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int key){
-    web_view->InjectChar(key);
+  glfwSetCharModsCallback(window, [](GLFWwindow* window, unsigned int key, int mods){
+    web_view->InjectKeyEvent(GlfwKeyEvent(key, mods));
   });
 
   glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y){
-    web_view->InjectMouseMove(x, y);
+    web_view->InjectMouseEvent(GlfwMouseEvent(x, y));
   });
 
   glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
-    if (action == GLFW_PRESS) {
-      web_view->InjectButtonDown(ToSwiftButton(button));
-    } else if (action == GLFW_RELEASE) {
-      web_view->InjectButtonUp(ToSwiftButton(button));
-    }
+    web_view->InjectMouseEvent(GlfwMouseEvent(button, action));
   });
 
   glfwSetScrollCallback(window, [](GLFWwindow* window, double x, double y){
-    web_view->InjectMouseWheel(x*10, y*10);
+    web_view->InjectMouseEvent(GlfwMouseEvent(y));
   });
 
   CreateResources();

@@ -14,7 +14,8 @@
 
 // includes  -------------------------------------------------------------------
 #include <iostream>
-#include "types.hpp"
+#include "KeyEvent.hpp"
+#include "MouseEvent.hpp"
 #include "utils.hpp"
 #include "Any.hpp"
 
@@ -75,16 +76,8 @@ class WebView {
   void Resize(int width, int height) const;
   void Reload(bool ignoreCache = false) const;
 
-  void InjectMouseMove(int x, int y);
-  void InjectMouseWheel(int x, int y);
-
-  void InjectButtonDown(Button button);
-  void InjectButtonUp(Button button);
-
-  void InjectKeyDown(int key, int code, int mods);
-  void InjectKeyUp(int key, int code, int mods);
-
-  void InjectChar(unsigned int key);
+  void InjectMouseEvent(MouseEvent const& event);
+  void InjectKeyEvent(KeyEvent const& event);
 
   void ToggleDevTools();
   void ShowDevTools();

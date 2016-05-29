@@ -72,92 +72,61 @@ void WebView::Reload(bool ignoreCache) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectMouseMove(int x, int y) {
-  mouse_x_ = x;
-  mouse_y_ = y;
+void WebView::InjectMouseEvent(MouseEvent const& event) {
 
-  CefMouseEvent event;
-  event.modifiers = mouse_modifiers_;
-  event.x = mouse_x_;
-  event.y = mouse_y_;
+  CefMouseEvent cef_event;
+  cef_event.modifiers = mouse_modifiers_;
+  cef_event.x = mouse_x_;
+  cef_event.y = mouse_y_;
 
-  client_->GetBrowser()->GetHost()->SendMouseMoveEvent(event, false);
+  switch(event.type_) {
+    case MouseEvent::Type::MOVE:
+      cef_event.x = mouse_x_ = event.x_;
+      cef_event.y = mouse_y_ = event.y_;
+      client_->GetBrowser()->GetHost()->SendMouseMoveEvent(cef_event, false);
+      break;
+
+    case MouseEvent::Type::SCROLL:
+      client_->GetBrowser()->GetHost()->SendMouseWheelEvent(cef_event, event.x_, event.y_);
+      break;
+
+    case MouseEvent::Type::PRESS:
+      if      (event.button_ == Button::LEFT)   mouse_modifiers_ |= (int)Modifier::LEFT_BUTTON;
+      else if (event.button_ == Button::RIGHT)  mouse_modifiers_ |= (int)Modifier::RIGHT_BUTTON;
+      else if (event.button_ == Button::MIDDLE) mouse_modifiers_ |= (int)Modifier::MIDDLE_BUTTON;
+      cef_event.modifiers = mouse_modifiers_;
+      client_->GetBrowser()->GetHost()->SendMouseClickEvent(cef_event, (cef_mouse_button_type_t)event.button_, false, 1);
+      break;
+
+    case MouseEvent::Type::RELEASE:
+      if      (event.button_ == Button::LEFT)   mouse_modifiers_ &= ~(int)Modifier::LEFT_BUTTON;
+      else if (event.button_ == Button::RIGHT)  mouse_modifiers_ &= ~(int)Modifier::RIGHT_BUTTON;
+      else if (event.button_ == Button::MIDDLE) mouse_modifiers_ &= ~(int)Modifier::MIDDLE_BUTTON;
+      cef_event.modifiers = mouse_modifiers_;
+      client_->GetBrowser()->GetHost()->SendMouseClickEvent(cef_event, (cef_mouse_button_type_t)event.button_, true, 1);
+      break;
+
+  }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void WebView::InjectMouseWheel(int x, int y) {
-  CefMouseEvent event;
-  event.x = mouse_x_;
-  event.y = mouse_y_;
+void WebView::InjectKeyEvent(KeyEvent const& event) {
+  CefKeyEvent cef_event;
+  cef_event.modifiers               = event.modifiers_;
+  // cef_event.native_key_code         = event.native_code_;
+  // cef_event.unmodified_character    = event.character_;
+  cef_event.character               = event.character_;
+  cef_event.is_system_key           = false;
+  cef_event.windows_key_code        = (int)event.key_;
+  cef_event.focus_on_editable_field = true;
 
-  client_->GetBrowser()->GetHost()->SendMouseWheelEvent(event, x, y);
-}
+  if      (event.type_ == KeyEvent::Type::PRESS)   cef_event.type = KEYEVENT_KEYDOWN;
+  else if (event.type_ == KeyEvent::Type::RELEASE) cef_event.type = KEYEVENT_KEYUP;
+  else                                             cef_event.type = KEYEVENT_CHAR;
 
-////////////////////////////////////////////////////////////////////////////////
-
-void WebView::InjectButtonDown(Button button) {
-
-  if (button == Button::LEFT)        mouse_modifiers_ |= (int)Modifier::LEFT_BUTTON;
-  else if (button == Button::RIGHT)  mouse_modifiers_ |= (int)Modifier::RIGHT_BUTTON;
-  else if (button == Button::MIDDLE) mouse_modifiers_ |= (int)Modifier::MIDDLE_BUTTON;
-
-  CefMouseEvent event;
-  event.modifiers = mouse_modifiers_;
-  event.x = mouse_x_;
-  event.y = mouse_y_;
-
-  client_->GetBrowser()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, false, 1);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void WebView::InjectButtonUp(Button button) {
-
-  if      (button == Button::LEFT)   mouse_modifiers_ &= ~(int)Modifier::LEFT_BUTTON;
-  else if (button == Button::RIGHT)  mouse_modifiers_ &= ~(int)Modifier::RIGHT_BUTTON;
-  else if (button == Button::MIDDLE) mouse_modifiers_ &= ~(int)Modifier::MIDDLE_BUTTON;
-
-  CefMouseEvent event;
-  event.modifiers = mouse_modifiers_;
-  event.x = mouse_x_;
-  event.y = mouse_y_;
-
-  client_->GetBrowser()->GetHost()->SendMouseClickEvent(event, (cef_mouse_button_type_t)button, true, 1);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void WebView::InjectKeyDown(int key, int code, int mods) {
-  CefKeyEvent event;
-  event.modifiers = mods;
-  event.native_key_code = code;
-  event.unmodified_character = key;
-  event.type = KEYEVENT_RAWKEYDOWN;
-
-  client_->GetBrowser()->GetHost()->SendKeyEvent(event);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void WebView::InjectKeyUp(int key, int code, int mods) {
-  CefKeyEvent event;
-  event.modifiers = mods;
-  event.native_key_code = code;
-  event.unmodified_character = key;
-  event.type = KEYEVENT_KEYUP;
-
-  client_->GetBrowser()->GetHost()->SendKeyEvent(event);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void WebView::InjectChar(unsigned int key) {
-  CefKeyEvent event;
-  event.character = key;
-  event.type = KEYEVENT_CHAR;
-
-  client_->GetBrowser()->GetHost()->SendKeyEvent(event);
+  client_->GetBrowser()->GetHost()->SendKeyEvent(cef_event);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
